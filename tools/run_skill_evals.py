@@ -18,6 +18,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -100,28 +101,47 @@ def main() -> int:
 
     cases = json.loads(args.evals.read_text(encoding="utf-8"))
     system = build_system_prompt()
-
-    failed = 0
-    for case in cases:
-        cid = case.get("id", "<no-id>")
-        try:
-            output = call_ollama(args.model, system, case["prompt"])
-        except (urllib.error.URLError, OSError) as e:
-            print(f"FATAL: cannot reach Ollama for case {cid}: {e}", file=sys.stderr)
-            return 2
-        fails = check_case(case, output)
-        if fails:
-            failed += 1
-            print(f"FAIL {cid}")
-            for f in fails:
-                print(f"  - {f}")
-            print(f"  --- output ---\n{indent(output)}\n  --------------")
-        else:
-            print(f"PASS {cid}")
+    host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+    show_full = os.environ.get("EVAL_DEBUG") == "1"
 
     total = len(cases)
-    print(f"\n{total - failed}/{total} passed ({args.model}, {args.evals.name})")
+    log(f"== {args.model} | {args.evals.name} | {total} cases | host {host}")
+    log(f"   system prompt: {len(system)} chars")
+
+    failed = 0
+    for i, case in enumerate(cases, 1):
+        cid = case.get("id", "<no-id>")
+        prompt = case["prompt"]
+        log(f"\n[{i}/{total}] {cid} — calling {args.model} "
+            f"(prompt {len(prompt)} chars)...")
+        start = time.monotonic()
+        try:
+            output = call_ollama(args.model, system, prompt)
+        except (urllib.error.URLError, OSError) as e:
+            log(f"FATAL: cannot reach Ollama for case {cid}: {e}")
+            return 2
+        elapsed = time.monotonic() - start
+        log(f"[{i}/{total}] {cid} — {elapsed:.1f}s, {len(output)} chars returned")
+
+        fails = check_case(case, output)
+        # On failure (or EVAL_DEBUG) show the whole answer, not a one-line teaser.
+        if fails or show_full:
+            log(f"  --- output ({cid}) ---\n{indent(output)}\n  ----------------------")
+        if fails:
+            failed += 1
+            log(f"FAIL {cid}")
+            for f in fails:
+                log(f"  - {f}")
+        else:
+            log(f"PASS {cid}")
+
+    log(f"\n{total - failed}/{total} passed ({args.model}, {args.evals.name})")
     return 1 if failed else 0
+
+
+def log(msg: str) -> None:
+    """Print and flush immediately so CI shows live progress, not a final dump."""
+    print(msg, flush=True)
 
 
 def indent(text: str) -> str:

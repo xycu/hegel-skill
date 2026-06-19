@@ -40,13 +40,15 @@ GitHub Actions
 Use:
 
 ```text
-gemma3:1b
+gemma3n:e2b
 ```
 
 Rationale:
 
-- small enough for GitHub-hosted runners;
-- better than ultra-tiny models for instruction following;
+- low-resource by design (Gemma 3n, ~2B effective via MatFormer), fits the
+  CPU-only GitHub runner;
+- follows the long persona system prompt far better than `gemma3:1b`, which
+  returned near-empty output and ignored the persona entirely in the first CI run;
 - adequate for English smoke tests.
 
 ### Polish

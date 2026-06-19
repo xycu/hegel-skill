@@ -28,7 +28,7 @@ jobs:
       matrix:
         include:
           - language: en
-            model: gemma3:1b
+            model: gemma3n:e2b
             evals: evals/hegel_skill_cases.en.json
           - language: pl
             model: SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0
