@@ -6,6 +6,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: skill-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Deterministic skill lint
@@ -28,7 +32,7 @@ jobs:
       matrix:
         include:
           - language: en
-            model: gemma4:e2b
+            model: gemma4:e4b-it-qat
             evals: evals/hegel_skill_cases.en.json
           - language: pl
             model: SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0

@@ -40,16 +40,17 @@ GitHub Actions
 Use:
 
 ```text
-gemma4:e2b
+gemma4:e4b-it-qat
 ```
 
 Rationale:
 
-- ~7.2 GB to load; fits the standard public-repo runner (4 vCPU / 16 GB RAM,
-  CPU-only) with room to spare;
-- follows the long persona system prompt far better than `gemma3:1b`, which
-  returned near-empty output and ignored the persona entirely in the first CI run;
-- CPU inference is slow at this size, so the smoke job allows 45 minutes.
+- Gemma 4 E4B (effective-4B), quantization-aware-trained at Q4_0, so it keeps
+  near-fp16 quality at 4-bit;
+- ~6.2 GB to load — smaller than the `e2b` fp16 build yet more capable, and
+  4-bit speeds up CPU inference on the standard runner (4 vCPU / 16 GB RAM);
+- earlier tiny models (`gemma3:1b`, `gemma4:e2b`) returned near-empty output;
+  the smoke job allows 45 minutes for CPU inference at this size.
 
 ### Polish
 
