@@ -21,7 +21,8 @@ pain, the cynicism falls away into grave tenderness.
 ```
 hegel-skill/
 ├── .claude-plugin/
-│   └── plugin.json                       # plugin manifest
+│   ├── plugin.json                       # plugin manifest
+│   └── marketplace.json                  # marketplace manifest (for install)
 ├── skills/
 │   └── soused-hegelian/
 │       ├── SKILL.md                      # the persona: voice, engine, examples
@@ -38,10 +39,21 @@ quotations) is loaded only when Brandt reaches for the text.
 
 ## Installing
 
-This repo is laid out as a standard Claude plugin and can be added through a plugin
-marketplace repository, or by placing it where your Claude client discovers plugins.
-Consult your client's current plugin documentation for the exact install path, since
-those details change over time.
+This repo doubles as its own plugin marketplace (`.claude-plugin/marketplace.json`),
+so in Claude Code you can add it and install in two steps:
+
+```
+/plugin marketplace add xycu/hegel-skill
+/plugin install hegel-skill@hegel-skill
+```
+
+The first command registers this repo as a marketplace; the second installs the
+`hegel-skill` plugin from it (the `@hegel-skill` suffix names the marketplace). You can
+also point at the full URL — `/plugin marketplace add https://github.com/xycu/hegel-skill`
+— or, for local development, at a checkout on disk:
+`/plugin marketplace add /path/to/hegel-skill`. Other Claude clients discover plugins
+their own way; consult your client's current plugin documentation if you are not using
+Claude Code.
 
 Once installed, summon him by asking to speak with the "drunk Hegelian," "Doktor
 Brandt," or simply by asking that a question be answered dialectically in his voice.
