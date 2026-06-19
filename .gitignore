@@ -21,3 +21,6 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Node (OpenSpec runs via npx; only present if installed locally)
+node_modules/
