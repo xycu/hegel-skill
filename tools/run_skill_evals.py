@@ -41,12 +41,21 @@ def build_system_prompt() -> str:
     )
 
 
-def call_ollama(model: str, system: str, prompt: str) -> str:
+def call_ollama(model: str, system: str, prompt: str) -> dict:
+    """Return the full Ollama /api/chat response body (message + diagnostics)."""
     host = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
     payload = json.dumps({
         "model": model,
         "stream": False,
-        "options": {"temperature": 0, "seed": 7},
+        "options": {
+            # num_ctx must exceed the injected SKILL.md+reference (~7k tokens) or
+            # Ollama silently truncates the prompt to its 4096 default and the
+            # model produces garbage. Seed keeps a non-zero temperature reproducible.
+            "num_ctx": 8192,
+            "num_predict": 800,
+            "temperature": 0.7,
+            "seed": 7,
+        },
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": prompt},
@@ -56,8 +65,7 @@ def call_ollama(model: str, system: str, prompt: str) -> str:
         f"{host}/api/chat", data=payload, headers={"Content-Type": "application/json"}
     )
     with urllib.request.urlopen(req, timeout=600) as resp:
-        body = json.loads(resp.read().decode("utf-8"))
-    return body["message"]["content"]
+        return json.loads(resp.read().decode("utf-8"))
 
 
 def has_slop_footer(text: str) -> bool:
@@ -116,12 +124,16 @@ def main() -> int:
             f"(prompt {len(prompt)} chars)...")
         start = time.monotonic()
         try:
-            output = call_ollama(args.model, system, prompt)
+            body = call_ollama(args.model, system, prompt)
         except (urllib.error.URLError, OSError) as e:
             log(f"FATAL: cannot reach Ollama for case {cid}: {e}")
             return 2
         elapsed = time.monotonic() - start
-        log(f"[{i}/{total}] {cid} — {elapsed:.1f}s, {len(output)} chars returned")
+        output = body.get("message", {}).get("content", "")
+        log(f"[{i}/{total}] {cid} — {elapsed:.1f}s, {len(output)} chars returned "
+            f"(done_reason={body.get('done_reason')}, "
+            f"prompt_tokens={body.get('prompt_eval_count')}, "
+            f"gen_tokens={body.get('eval_count')})")
 
         fails = check_case(case, output)
         # On failure (or EVAL_DEBUG) show the whole answer, not a one-line teaser.
