@@ -23,6 +23,14 @@ hegel-skill/
 ├── .claude-plugin/
 │   ├── plugin.json                       # plugin manifest
 │   └── marketplace.json                  # marketplace manifest (for install)
+├── .github/
+│   └── workflows/
+│       └── openspec.yml                  # CI: strict OpenSpec validation
+├── openspec/
+│   ├── specs/
+│   │   └── soused-hegelian-persona/
+│   │       └── spec.md                   # the persona's invariants as requirements
+│   └── changes/                          # proposed changes (one dir each)
 ├── skills/
 │   └── soused-hegelian/
 │       ├── SKILL.md                      # the persona: voice, engine, examples
@@ -36,6 +44,29 @@ hegel-skill/
 The skill uses progressive disclosure: the persona and its rules live in `SKILL.md`,
 while the reference sheet (works to cite, a glossary of real terms, and genuine short
 quotations) is loaded only when Brandt reaches for the text.
+
+## Spec-driven development
+
+The skill is prose, but its load-bearing rules — the dialectical engine on every
+answer, citation fidelity, the voice register, the slop pass, persona
+persistence, the two boundary cases, progressive disclosure — are mirrored as
+explicit requirements in [`openspec/specs/soused-hegelian-persona/spec.md`](openspec/specs/soused-hegelian-persona/spec.md),
+using [OpenSpec](https://github.com/Fission-AI/OpenSpec). That spec is the source
+of truth for *how Brandt must behave*; the `AGENTS.md` invariants narrate the
+same rules for human readers.
+
+CI runs `openspec validate --all --strict` on every pull request and push to
+`main` (see [`.github/workflows/openspec.yml`](.github/workflows/openspec.yml)),
+so a malformed or incomplete spec fails the build. Behavioural changes to the
+persona should go through an OpenSpec change first:
+
+```
+npx -y @fission-ai/openspec@latest validate --all --strict   # what CI runs
+openspec list --specs                                        # see the capability
+```
+
+Project-scoped `/opsx:*` slash commands (in `.claude/`) drive the propose →
+apply → archive workflow inside Claude Code.
 
 ## Installing
 

@@ -56,6 +56,30 @@ These are the load-bearing rules of the persona; don't soften them by accident:
   dependency is **optional**: use it if present, else apply the inline de-slop fallback
   and flag its absence in the first answer's footer.
 
+## Spec-driven development (OpenSpec)
+
+The invariants above are also encoded as machine-checkable requirements in
+`openspec/specs/soused-hegelian-persona/spec.md` (OpenSpec, `@fission-ai/openspec`).
+That file is the **source of truth for behaviour**; this section of `AGENTS.md` is
+its human-readable mirror — when you change one, change the other so they do not
+drift. CI (`.github/workflows/openspec.yml`) runs
+`openspec validate --all --strict` on every PR and push to `main`; a malformed or
+scenario-less requirement fails the build.
+
+The workflow for a **behavioural change to the persona**:
+
+1. Open a change under `openspec/changes/<change-name>/` — `proposal.md` plus a
+   delta `specs/soused-hegelian-persona/spec.md` (delta headers: `## ADDED
+   Requirements`, `## MODIFIED Requirements`, `## REMOVED Requirements`).
+2. `openspec validate <change-name> --strict` until clean.
+3. Edit the actual skill prose (`SKILL.md` / references) to match.
+4. `openspec archive <change-name>` to merge the delta into
+   `openspec/specs/` and move the change to `openspec/changes/archive/`.
+
+The `/opsx:*` slash commands in `.claude/` (propose, apply, archive, explore,
+sync) automate this inside Claude Code. Pure prose polish that does not alter any
+requirement needs no change proposal — just keep the spec accurate.
+
 ## Asset licensing (don't conflate)
 
 The plugin's prose is MIT-licensed (`LICENSE`). `assets/hegel.jpg` is **not** under that
