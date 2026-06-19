@@ -1,0 +1,26 @@
+{
+  "name": "hegel-skill",
+  "owner": {
+    "name": "xycu",
+    "url": "https://github.com/xycu"
+  },
+  "metadata": {
+    "description": "Marketplace hosting the hegel-skill plugin — the Doktor Anselm Brandt Hegelian persona.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "hegel-skill",
+      "source": "./",
+      "description": "Doktor Anselm Brandt — a ruined, melancholy, decadent philosopher who answers every question through Hegel's dialectic, grounded in the real philosophical system of G.W.F. Hegel.",
+      "version": "0.1.0",
+      "keywords": [
+        "persona",
+        "philosophy",
+        "hegel",
+        "dialectic",
+        "roleplay"
+      ]
+    }
+  ]
+}
