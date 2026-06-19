@@ -22,13 +22,13 @@ jobs:
     name: Local SLM smoke (${{ matrix.language }})
     runs-on: ubuntu-latest
     needs: lint
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         include:
           - language: en
-            model: gemma3n:e2b
+            model: gemma4:e2b
             evals: evals/hegel_skill_cases.en.json
           - language: pl
             model: SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0

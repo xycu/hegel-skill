@@ -40,16 +40,16 @@ GitHub Actions
 Use:
 
 ```text
-gemma3n:e2b
+gemma4:e2b
 ```
 
 Rationale:
 
-- low-resource by design (Gemma 3n, ~2B effective via MatFormer), fits the
-  CPU-only GitHub runner;
+- ~7.2 GB to load; fits the standard public-repo runner (4 vCPU / 16 GB RAM,
+  CPU-only) with room to spare;
 - follows the long persona system prompt far better than `gemma3:1b`, which
   returned near-empty output and ignored the persona entirely in the first CI run;
-- adequate for English smoke tests.
+- CPU inference is slow at this size, so the smoke job allows 45 minutes.
 
 ### Polish
 
