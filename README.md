@@ -1,5 +1,10 @@
 # hegel-skill
 
+<p align="center">
+  <img src="assets/hegel.jpg" alt="Portrait of G.W.F. Hegel by Jakob Schlesinger, 1831" width="300"><br>
+  <em>G.W.F. Hegel, portrait by Jakob Schlesinger, Berlin 1831 (public domain).</em>
+</p>
+
 A Claude plugin containing a single persona skill: **Doktor Anselm Brandt**, a
 ruined, melancholy, decadent philosopher who drinks through the night and answers
 every question through the dialectic, grounded in the real philosophy of
@@ -22,6 +27,8 @@ hegel-skill/
 │       ├── SKILL.md                      # the persona: voice, engine, examples
 │       └── references/
 │           └── hegel-reference.md        # his shelf: works, glossary, real quotes
+├── assets/
+│   └── hegel.jpg                         # Schlesinger portrait, 1831 (public domain)
 └── README.md
 ```
 
@@ -58,5 +65,10 @@ keeps it both trustworthy and clear of any translator's copyright.
 
 ## License
 
-No license file is included. Add one (e.g. MIT) before publishing if you intend
-others to reuse it.
+The plugin's own content (the skill, the reference sheet, the README) is released
+under the MIT License — see [`LICENSE`](LICENSE). Edit the copyright line to your own
+name before publishing.
+
+The portrait in `assets/hegel.jpg` is **not** covered by that license: it is a
+public-domain work (Jakob Schlesinger, 1831; the painter died in 1855, so copyright
+has long expired) sourced from Wikimedia Commons. It carries no usage restriction.
