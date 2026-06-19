@@ -68,6 +68,38 @@ openspec list --specs                                        # see the capabilit
 Project-scoped `/opsx:*` slash commands (in `.claude/`) drive the propose →
 apply → archive workflow inside Claude Code.
 
+## Testing
+
+The skill is prose, but two automated layers guard against regressions (CI:
+[`.github/workflows/skill-ci.yml`](.github/workflows/skill-ci.yml)):
+
+1. **Deterministic lint** — `tools/skill_lint.py` checks the package structure,
+   the plugin/marketplace JSON, the `SKILL.md` frontmatter (`name`,
+   `description`, activation terms), and that the body still documents the
+   load-bearing behaviours. No model, no dependencies.
+2. **Local SLM smoke evals** — `tools/run_skill_evals.py` runs the skill against
+   small local models via [Ollama](https://ollama.com) and checks shallow,
+   contract-based markers (`must_include_any` / `must_include_all` /
+   `must_not_include` plus the `slop:` footer). English uses `gemma3:1b`; Polish
+   uses `SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0`.
+
+These smoke evals catch obvious regressions only — they are **not** a measure of
+literary quality and **do not replace manual Claude Code testing**. Before a
+release, still run the plugin in Claude Code and confirm it discovers and invokes
+the skill correctly.
+
+Run locally (stdlib Python 3.12+; Ollama only needed for the evals):
+
+```bash
+python tools/skill_lint.py                                          # lint, no model
+ollama pull gemma3:1b
+python tools/run_skill_evals.py --model gemma3:1b --evals evals/hegel_skill_cases.en.json
+ollama pull SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0
+python tools/run_skill_evals.py --model SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0 --evals evals/hegel_skill_cases.pl.json
+```
+
+`OLLAMA_HOST` overrides the server URL (default `http://localhost:11434`).
+
 ## Installing
 
 This repo doubles as its own plugin marketplace (`.claude-plugin/marketplace.json`),
