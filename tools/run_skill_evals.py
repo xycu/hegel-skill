@@ -30,7 +30,23 @@ REFERENCE = ROOT / "skills" / "soused-hegelian" / "references" / "hegel-referenc
 SLOP_FOOTER_MARKER = "slop:"  # checked alongside an N/10 digit run
 
 
+# Known eval languages (for inference). English needs no directive (the skill's
+# examples are English, so the default already produces English).
 LANG_NAMES = {"en": "English", "pl": "Polish"}
+
+# Per-language output directive, written *in the target language*. Instructing in
+# the language itself primes a small model to continue in it — far more reliable
+# than an English "write in Polish" meta-instruction, which Bielik answered in
+# French. Names no assertion marker terms. Forbids the languages it drifts to.
+LANG_DIRECTIVES = {
+    "pl": (
+        "\n=== JĘZYK ODPOWIEDZI (ważniejszy niż język przykładów powyżej) ===\n"
+        "Pytanie użytkownika jest po polsku. Napisz CAŁĄ swoją odpowiedź po polsku, "
+        "w głosie Doktora Brandta. Przykłady powyżej są po angielsku tylko dla "
+        "ilustracji i nie są powodem, aby odpowiadać po angielsku. Nie odpowiadaj "
+        "po angielsku ani po francusku — wyłącznie po polsku.\n"
+    ),
+}
 
 
 def build_system_prompt(lang: str | None = None) -> str:
@@ -42,22 +58,7 @@ def build_system_prompt(lang: str | None = None) -> str:
         f"=== SKILL.md ===\n{skill}\n\n"
         f"=== references/hegel-reference.md ===\n{reference}\n"
     )
-    # The skill's worked examples are all in English and sit at the very end of
-    # the prompt — maximum recency. A small local model leans on them and answers
-    # in English even to a non-English question. The skill's own language rule is
-    # the real-runtime fix (a capable model obeys it); here we restate it last so
-    # the weak proxy model actually exercises the target language. No marker terms
-    # are named, so this does not feed the assertions their answers.
-    if lang in LANG_NAMES and lang != "en":
-        name = LANG_NAMES[lang]
-        prompt += (
-            f"\n=== OUTPUT LANGUAGE (overrides the language of the examples above) ===\n"
-            f"The user is writing in {name}. Write your ENTIRE answer in {name}; the "
-            f"English of the examples above is illustrative only and is not a licence to "
-            f"reply in English. Render Hegel's terminology in its standard {name} "
-            f"philosophical forms. Do not reply in any language other than {name}.\n"
-        )
-    return prompt
+    return prompt + LANG_DIRECTIVES.get(lang, "")
 
 
 def call_ollama(model: str, system: str, prompt: str) -> dict:
