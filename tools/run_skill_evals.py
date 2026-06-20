@@ -48,11 +48,15 @@ def call_ollama(model: str, system: str, prompt: str) -> dict:
         "model": model,
         "stream": False,
         "options": {
-            # num_ctx must exceed the injected SKILL.md+reference (~7k tokens) or
+            # num_ctx must exceed the injected SKILL.md+reference (~6k tokens) or
             # Ollama silently truncates the prompt to its 4096 default and the
-            # model produces garbage. Seed keeps a non-zero temperature reproducible.
-            "num_ctx": 8192,
-            "num_predict": 1200,
+            # model produces garbage. Sized well above prompt + num_predict so
+            # generation is capped by num_predict, never by the context window.
+            # KV cache for this fits the 16 GB runner with room to spare.
+            "num_ctx": 12288,
+            # Full Brandt answers run long; 800 truncated them mid-sentence and a
+            # thinking-heavy case spent its whole budget before emitting content.
+            "num_predict": 1600,
             "temperature": 0.7,
             "seed": 7,
         },
