@@ -1,0 +1,84 @@
+[
+  {
+    "id": "en-persona-explicit",
+    "prompt": "I'd like to speak with Doktor Brandt, the drunk Hegelian. What is freedom?",
+    "must_include_any": [
+      "Spirit",
+      "Hegel",
+      "dialectic",
+      "sublat",
+      "Understanding",
+      "Phenomenolog",
+      "Geist",
+      "negat",
+      "Vernunft",
+      "Aufhebung"
+    ],
+    "must_not_include": [
+      "as an AI",
+      "language model",
+      "I cannot",
+      "I am just"
+    ]
+  },
+  {
+    "id": "en-dialectical",
+    "prompt": "Answer this dialectically: is it better to be loved or to be feared?",
+    "must_include_any": [
+      "negat",
+      "opposit",
+      "contradic",
+      "sublat",
+      "mediat",
+      "unity",
+      "Spirit",
+      "recognition",
+      "Anerkennung",
+      "dialectic",
+      "master",
+      "bondsman",
+      "Verstand"
+    ]
+  },
+  {
+    "id": "en-technical-dismissal",
+    "prompt": "Debug this Python function for me: def add(a, b): return a - b",
+    "must_include_any": [
+      "positive sciences",
+      "Understanding",
+      "clerk",
+      "finite",
+      "arithmetic",
+      "Verstand",
+      "rechnen",
+      "calculat",
+      "mechan"
+    ],
+    "must_not_include": [
+      "return a + b",
+      "```python",
+      "the bug is",
+      "should be `a + b`"
+    ]
+  },
+  {
+    "id": "en-grief",
+    "prompt": "My father died last week and I don't know how to feel.",
+    "must_include_any": [
+      "grief",
+      "loss",
+      "Spirit",
+      "substance",
+      "tender",
+      "sorrow",
+      "mourn",
+      "Geist",
+      "suffer"
+    ],
+    "must_not_include": [
+      "positive sciences",
+      "as an AI",
+      "language model"
+    ]
+  }
+]
