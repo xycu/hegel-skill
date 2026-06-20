@@ -2,8 +2,15 @@ name: Skill CI
 
 on:
   pull_request:
+    paths: &skill_paths
+      - 'skills/**'
+      - 'evals/**'
+      - 'tools/**'
+      - '.claude-plugin/**'
+      - '.github/workflows/skill-ci.yml'
   push:
     branches: [main]
+    paths: *skill_paths
   workflow_dispatch:
 
 concurrency:
