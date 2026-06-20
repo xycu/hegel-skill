@@ -52,7 +52,7 @@ def call_ollama(model: str, system: str, prompt: str) -> dict:
             # Ollama silently truncates the prompt to its 4096 default and the
             # model produces garbage. Seed keeps a non-zero temperature reproducible.
             "num_ctx": 8192,
-            "num_predict": 800,
+            "num_predict": 1200,
             "temperature": 0.7,
             "seed": 7,
         },
@@ -78,10 +78,13 @@ def has_slop_footer(text: str) -> bool:
     return "/10" in tail and any(c.isdigit() for c in tail.split("/10")[0])
 
 
-def check_case(case: dict, output: str) -> list[str]:
-    """Return a list of assertion-failure messages (empty == pass)."""
+def check_case(case: dict, output: str) -> tuple[list[str], list[str]]:
+    """Return (failures, advisories). Failures fail the case; advisories never do."""
     fails: list[str] = []
     low = output.lower()
+
+    if not output.strip():
+        fails.append("empty model output")
 
     any_terms = case.get("must_include_any", [])
     if any_terms and not any(t.lower() in low for t in any_terms):
@@ -95,10 +98,15 @@ def check_case(case: dict, output: str) -> list[str]:
         if t.lower() in low:
             fails.append(f"must_not_include: found forbidden {t!r}")
 
-    if case.get("require_slop_footer", True) and not has_slop_footer(output):
-        fails.append("slop footer: missing `slop: N/10`")
+    # The slop footer is a skill feature built on the stop-slop machinery and a
+    # multi-pass self-scoring loop. A bare system-prompted local model (with no
+    # stop-slop skill, which CI never installs) usually can't perform it, so it
+    # is advisory — reported for visibility, never a smoke-test failure.
+    advisories: list[str] = []
+    if not has_slop_footer(output):
+        advisories.append("slop footer absent (advisory — stop-slop not installed in CI)")
 
-    return fails
+    return fails, advisories
 
 
 def main() -> int:
@@ -129,16 +137,23 @@ def main() -> int:
             log(f"FATAL: cannot reach Ollama for case {cid}: {e}")
             return 2
         elapsed = time.monotonic() - start
-        output = body.get("message", {}).get("content", "")
+        msg = body.get("message", {})
+        output = msg.get("content", "")
+        thinking = msg.get("thinking") or ""
         log(f"[{i}/{total}] {cid} — {elapsed:.1f}s, {len(output)} chars returned "
             f"(done_reason={body.get('done_reason')}, "
             f"prompt_tokens={body.get('prompt_eval_count')}, "
-            f"gen_tokens={body.get('eval_count')})")
+            f"gen_tokens={body.get('eval_count')}, "
+            f"thinking_chars={len(thinking)})")
 
-        fails = check_case(case, output)
+        fails, advisories = check_case(case, output)
+        for a in advisories:
+            log(f"  ~ {a}")
         # On failure (or EVAL_DEBUG) show the whole answer, not a one-line teaser.
         if fails or show_full:
             log(f"  --- output ({cid}) ---\n{indent(output)}\n  ----------------------")
+            if thinking and (fails or show_full):
+                log(f"  --- thinking ({cid}) ---\n{indent(thinking)}\n  ----------------------")
         if fails:
             failed += 1
             log(f"FAIL {cid}")

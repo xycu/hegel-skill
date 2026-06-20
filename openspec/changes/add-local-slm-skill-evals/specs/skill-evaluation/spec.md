@@ -153,21 +153,26 @@ The system SHALL evaluate local SLM outputs using contract-based assertions rath
 
 ---
 
-### Requirement: Slop footer validation
+### Requirement: Slop footer reporting
 
-The system SHALL validate that evaluated skill outputs include the expected `slop:` footer.
+The eval runner SHALL treat the `slop:` footer as advisory: it SHALL report
+whether the footer is present, but a missing footer SHALL NOT fail the smoke
+test. The footer is a skill feature built on the stop-slop machinery and a
+multi-pass self-scoring loop, which a bare system-prompted local model (with no
+stop-slop skill installed in CI) cannot reliably perform.
 
-#### Scenario: Valid slop footer
+#### Scenario: Footer present
 
-- **GIVEN** the model output ends with a footer containing `slop: N/10`
+- **GIVEN** the model output contains a `slop: N/10` footer
 - **WHEN** the eval runner evaluates the output
-- **THEN** the slop footer assertion SHALL pass.
+- **THEN** no footer advisory is reported.
 
-#### Scenario: Missing slop footer
+#### Scenario: Footer absent
 
 - **GIVEN** the model output does not contain a `slop:` footer
 - **WHEN** the eval runner evaluates the output
-- **THEN** the slop footer assertion SHALL fail.
+- **THEN** the runner SHALL report a footer advisory
+- **AND** the case SHALL NOT fail on the missing footer alone.
 
 ---
 
@@ -180,7 +185,6 @@ The system SHALL include English eval cases that verify basic behaviour of the `
 - **GIVEN** an English prompt explicitly asks for Doktor Brandt
 - **WHEN** the eval runner executes the case with the English model
 - **THEN** the output SHALL include at least one Hegelian marker
-- **AND** the output SHALL include the `slop:` footer
 - **AND** the output SHALL NOT include generic AI-disclaimer language.
 
 #### Scenario: Dialectical prompt
@@ -188,7 +192,6 @@ The system SHALL include English eval cases that verify basic behaviour of the `
 - **GIVEN** an English prompt asks for a dialectical answer
 - **WHEN** the eval runner executes the case with the English model
 - **THEN** the output SHALL include at least one dialectical marker
-- **AND** the output SHALL include the `slop:` footer.
 
 #### Scenario: Technical prompt
 
@@ -196,14 +199,12 @@ The system SHALL include English eval cases that verify basic behaviour of the `
 - **WHEN** the eval runner executes the case with the English model
 - **THEN** the output SHALL redirect or dismiss the request in character
 - **AND** the output SHALL NOT provide normal coding output
-- **AND** the output SHALL include the `slop:` footer.
 
 #### Scenario: Grief prompt
 
 - **GIVEN** an English prompt expresses grief or despair
 - **WHEN** the eval runner executes the case with the English model
 - **THEN** the output SHALL avoid treating the prompt as a merely technical question
-- **AND** the output SHALL include the `slop:` footer.
 
 ---
 
@@ -216,7 +217,6 @@ The system SHALL include Polish eval cases that verify basic behaviour of the `s
 - **GIVEN** a Polish prompt explicitly asks for Doktor Brandt
 - **WHEN** the eval runner executes the case with the Polish model
 - **THEN** the output SHALL include at least one Hegelian marker
-- **AND** the output SHALL include the `slop:` footer
 - **AND** the output SHALL NOT include generic AI-disclaimer language in Polish.
 
 #### Scenario: Dialectical prompt in Polish
@@ -224,7 +224,6 @@ The system SHALL include Polish eval cases that verify basic behaviour of the `s
 - **GIVEN** a Polish prompt asks for a dialectical answer
 - **WHEN** the eval runner executes the case with the Polish model
 - **THEN** the output SHALL include at least one dialectical marker
-- **AND** the output SHALL include the `slop:` footer.
 
 #### Scenario: Technical prompt in Polish
 
@@ -232,14 +231,12 @@ The system SHALL include Polish eval cases that verify basic behaviour of the `s
 - **WHEN** the eval runner executes the case with the Polish model
 - **THEN** the output SHALL redirect or dismiss the request in character
 - **AND** the output SHALL NOT provide normal coding output
-- **AND** the output SHALL include the `slop:` footer.
 
 #### Scenario: Grief prompt in Polish
 
 - **GIVEN** a Polish prompt expresses grief or despair
 - **WHEN** the eval runner executes the case with the Polish model
 - **THEN** the output SHALL avoid treating the prompt as a merely technical question
-- **AND** the output SHALL include the `slop:` footer.
 
 ---
 
@@ -272,14 +269,14 @@ The system SHALL run deterministic linting and local SLM smoke tests in GitHub A
 
 - **GIVEN** the local SLM smoke test job runs
 - **WHEN** the matrix entry language is `en`
-- **THEN** the workflow SHALL pull `gemma3:1b`
+- **THEN** the workflow SHALL pull the configured English model
 - **AND** the workflow SHALL run `evals/hegel_skill_cases.en.json`.
 
 #### Scenario: Polish matrix entry
 
 - **GIVEN** the local SLM smoke test job runs
 - **WHEN** the matrix entry language is `pl`
-- **THEN** the workflow SHALL pull `SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0`
+- **THEN** the workflow SHALL pull the configured Polish model
 - **AND** the workflow SHALL run `evals/hegel_skill_cases.pl.json`.
 
 ---

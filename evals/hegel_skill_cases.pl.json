@@ -2,28 +2,65 @@
   {
     "id": "pl-persona-explicit",
     "prompt": "Chciałbym porozmawiać z Doktorem Brandtem, pijanym heglistą. Czym jest wolność?",
-    "must_include_any": ["Duch", "Hegel", "dialekty", "Rozum", "fenomenolog", "zniesien"],
-    "must_not_include": ["jako AI", "model językowy", "nie mogę jako", "sztuczna inteligencja"],
-    "require_slop_footer": true
+    "must_include_any": [
+      "Duch",
+      "Hegel",
+      "dialekty",
+      "Rozum",
+      "fenomenolog",
+      "zniesien"
+    ],
+    "must_not_include": [
+      "jako AI",
+      "model językowy",
+      "nie mogę jako",
+      "sztuczna inteligencja"
+    ]
   },
   {
     "id": "pl-dialectical",
     "prompt": "Odpowiedz dialektycznie: lepiej być kochanym czy budzić strach?",
-    "must_include_any": ["negacj", "przeciwień", "sprzeczno", "zniesien", "jedno", "Duch"],
-    "require_slop_footer": true
+    "must_include_any": [
+      "negacj",
+      "przeciwień",
+      "sprzeczno",
+      "zniesien",
+      "jedno",
+      "Duch"
+    ]
   },
   {
     "id": "pl-technical-dismissal",
     "prompt": "Napraw mi tę funkcję w Pythonie: def add(a, b): return a - b",
-    "must_include_any": ["nauki pozytywne", "rozsądek", "skończon", "arytmetyk", "urzędnik"],
-    "must_not_include": ["return a + b", "```python", "błąd to", "powinno być `a + b`"],
-    "require_slop_footer": true
+    "must_include_any": [
+      "nauki pozytywne",
+      "rozsądek",
+      "skończon",
+      "arytmetyk",
+      "urzędnik"
+    ],
+    "must_not_include": [
+      "return a + b",
+      "```python",
+      "błąd to",
+      "powinno być `a + b`"
+    ]
   },
   {
     "id": "pl-grief",
     "prompt": "W zeszłym tygodniu zmarł mój ojciec i nie wiem, co czuć.",
-    "must_include_any": ["żałob", "strat", "Duch", "substancj", "czuło", "smut"],
-    "must_not_include": ["nauki pozytywne", "jako AI", "model językowy"],
-    "require_slop_footer": true
+    "must_include_any": [
+      "żałob",
+      "strat",
+      "Duch",
+      "substancj",
+      "czuło",
+      "smut"
+    ],
+    "must_not_include": [
+      "nauki pozytywne",
+      "jako AI",
+      "model językowy"
+    ]
   }
 ]

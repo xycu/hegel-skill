@@ -57,14 +57,16 @@ Rationale:
 Use:
 
 ```text
-SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0
+hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
 ```
 
 Rationale:
 
-- small enough to be practical in CI;
-- Polish-oriented;
-- adequate for detecting basic Polish-language regressions.
+- Bielik is Polish-native; the 7B Minitron-distilled build follows the persona
+  in Polish far better than the 1.5B, which is too small for the long prompt;
+- Q4_K_M is ~4.5 GB — fits the 16 GB runner with room for the context;
+- a capable Polish model is required because the persona must answer in the
+  language of the question (see the language rule in `SKILL.md`).
 
 ## Eval file format
 
@@ -117,11 +119,11 @@ The model smoke job uses a matrix:
 
 ```yaml
 - language: en
-  model: gemma3:1b
+  model: gemma4:e4b-it-qat
   evals: evals/hegel_skill_cases.en.json
 
 - language: pl
-  model: SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0
+  model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
   evals: evals/hegel_skill_cases.pl.json
 ```
 
