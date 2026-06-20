@@ -57,14 +57,15 @@ Rationale:
 Use:
 
 ```text
-hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
+hf.co/oskarraszkiewicz/Bielik-4.5B-v3.0-Instruct-Q4_K_M-GGUF
 ```
 
 Rationale:
 
-- Bielik is Polish-native; the 7B Minitron-distilled build follows the persona
-  in Polish far better than the 1.5B, which is too small for the long prompt;
-- Q4_K_M is ~4.5 GB — fits the 16 GB runner with room for the context;
+- Bielik is Polish-native; 4.5B follows the persona prompt far better than the
+  1.5B, which is too small, while running roughly twice as fast on CPU as the
+  7B Minitron build, which overran the job time budget;
+- imatrix-calibrated Q4_K_M, ~2.9 GB — four cases fit the runner's time budget;
 - a capable Polish model is required because the persona must answer in the
   language of the question (see the language rule in `SKILL.md`).
 
@@ -123,7 +124,7 @@ The model smoke job uses a matrix:
   evals: evals/hegel_skill_cases.en.json
 
 - language: pl
-  model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
+  model: hf.co/oskarraszkiewicz/Bielik-4.5B-v3.0-Instruct-Q4_K_M-GGUF
   evals: evals/hegel_skill_cases.pl.json
 ```
 

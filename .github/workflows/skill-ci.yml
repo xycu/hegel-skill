@@ -26,7 +26,7 @@ jobs:
     name: Local SLM smoke (${{ matrix.language }})
     runs-on: ubuntu-latest
     needs: lint
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -35,7 +35,7 @@ jobs:
             model: gemma4:e4b-it-qat
             evals: evals/hegel_skill_cases.en.json
           - language: pl
-            model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
+            model: hf.co/oskarraszkiewicz/Bielik-4.5B-v3.0-Instruct-Q4_K_M-GGUF
             evals: evals/hegel_skill_cases.pl.json
     steps:
       - uses: actions/checkout@v4

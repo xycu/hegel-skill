@@ -68,7 +68,11 @@ def call_ollama(model: str, system: str, prompt: str) -> dict:
     req = urllib.request.Request(
         f"{host}/api/chat", data=payload, headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=600) as resp:
+    # A 7B model on a CPU runner can take many minutes for one answer (load +
+    # ~6k-token prompt eval + generation). The default socket timeout must cover
+    # the slowest single call, not the whole job. Override with EVAL_HTTP_TIMEOUT.
+    timeout = int(os.environ.get("EVAL_HTTP_TIMEOUT", "1800"))
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
