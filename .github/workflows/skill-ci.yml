@@ -45,15 +45,11 @@ jobs:
             evals: evals/hegel_skill_cases.pl.json
             only: ""
             canary: false
-          # Compatibility canaries: one Polish case each on a Polish-native model
-          # from two different families (Bielik / Llama-PLLuM). Non-blocking.
+          # Compatibility canary: one Polish case on a Polish-native model
+          # (Bielik-7B). Non-blocking. PLLuM was dropped — too terse / breaks
+          # character at both 4B and 8B.
           - language: pl-canary-bielik7b
             model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
-            evals: evals/hegel_skill_cases.pl.json
-            only: pl-dialectical
-            canary: true
-          - language: pl-canary-pllum8b
-            model: hf.co/mradermacher/Llama-PLLuM-8B-instruct-2512-GGUF:Q4_K_M
             evals: evals/hegel_skill_cases.pl.json
             only: pl-dialectical
             canary: true

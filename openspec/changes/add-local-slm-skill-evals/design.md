@@ -55,26 +55,25 @@ Rationale:
 - it uses a reasoning channel, so `num_predict` must be high enough (1600) for it
   to finish thinking before emitting content (see the eval runner notes).
 
-### Compatibility canaries (Polish-native, non-blocking)
+### Compatibility canary (Polish-native, non-blocking)
 
-One Polish case (`pl-dialectical`, via `--only`) on each of two Polish-native
-models from different families:
+One Polish case (`pl-dialectical`, via `--only`) on a Polish-native model:
 
 ```text
 hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
-hf.co/mradermacher/Llama-PLLuM-8B-instruct-2512-GGUF:Q4_K_M
 ```
 
 Rationale:
 
-- the gate model (gemma) is multilingual but not Polish-native; the canaries are
-  a thin "a real Polish-native model still runs this skill" signal across the two
-  main Polish model families (Bielik / Llama-PLLuM);
-- they are **non-blocking** (`continue-on-error`): third-party models may drift,
-  so a canary reports pass/fail but never fails the build;
-- they are slow 7–8B CPU jobs, so the job keeps a 90-minute timeout and a
-  40-minute (`EVAL_HTTP_TIMEOUT=2400`) per-call socket timeout. They run in
-  parallel with the gates, so they do not extend wall-clock much.
+- the gate model (gemma) is multilingual but not Polish-native; the canary is a
+  thin "a real Polish-native model still runs this skill" signal — Bielik-7B
+  produces rich in-character Polish (Verstand/Vernunft, *aufheben*, Anerkennung);
+- it is **non-blocking** (`continue-on-error`): a third-party model may drift, so
+  the canary reports pass/fail but never fails the build;
+- Llama-PLLuM (4B and 8B) was tried and dropped — too terse, broke character;
+- it is a slow 7B CPU job, so the job keeps a 90-minute timeout and a 40-minute
+  (`EVAL_HTTP_TIMEOUT=2400`) per-call socket timeout. It runs in parallel with
+  the gates, so it does not extend wall-clock much.
 
 ## Eval file format
 
@@ -142,14 +141,9 @@ The model smoke job uses a matrix:
   model: gemma4:e4b-it-qat
   evals: evals/hegel_skill_cases.pl.json
 
-# Compatibility canaries (one PL case each, non-blocking)
+# Compatibility canary (one PL case, non-blocking)
 - language: pl-canary-bielik7b
   model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
-  evals: evals/hegel_skill_cases.pl.json
-  only: pl-dialectical
-  canary: true
-- language: pl-canary-pllum8b
-  model: hf.co/mradermacher/Llama-PLLuM-8B-instruct-2512-GGUF:Q4_K_M
   evals: evals/hegel_skill_cases.pl.json
   only: pl-dialectical
   canary: true
