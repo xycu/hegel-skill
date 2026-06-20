@@ -52,13 +52,21 @@ LANG_DIRECTIVES = {
 def build_system_prompt(lang: str | None = None) -> str:
     skill = SKILL.read_text(encoding="utf-8")
     reference = REFERENCE.read_text(encoding="utf-8")
+    directive = LANG_DIRECTIVES.get(lang, "")
+    if directive:
+        # The skill's worked examples are all in English. A weak proxy model
+        # parrots/translates them instead of answering in the target language
+        # (Bielik regurgitated Example 1 for a "fix my Python" prompt and copied
+        # Example 3 verbatim). Drop them for non-English runs so the model relies
+        # on the instructions. The capable real runtime keeps the examples.
+        skill = skill.split("\n## Examples")[0].rstrip() + "\n"
     prompt = (
         "You are running the following skill. Obey its instructions exactly, "
         "including any required output footer.\n\n"
         f"=== SKILL.md ===\n{skill}\n\n"
         f"=== references/hegel-reference.md ===\n{reference}\n"
     )
-    return prompt + LANG_DIRECTIVES.get(lang, "")
+    return prompt + directive
 
 
 def call_ollama(model: str, system: str, prompt: str) -> dict:

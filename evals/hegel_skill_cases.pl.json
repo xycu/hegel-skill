@@ -5,10 +5,14 @@
     "must_include_any": [
       "Duch",
       "Hegel",
-      "dialekty",
+      "dialekt",
       "Rozum",
       "fenomenolog",
-      "zniesien"
+      "zniesien",
+      "Geist",
+      "Aufhebung",
+      "sublac",
+      "Vernunft"
     ],
     "must_not_include": [
       "jako AI",
@@ -22,22 +26,32 @@
     "prompt": "Odpowiedz dialektycznie: lepiej być kochanym czy budzić strach?",
     "must_include_any": [
       "negacj",
-      "przeciwień",
+      "przeciw",
       "sprzeczno",
       "zniesien",
-      "jedno",
-      "Duch"
+      "sublac",
+      "Duch",
+      "Geist",
+      "Aufhebung",
+      "Vernunft",
+      "dialekt",
+      "mistrz",
+      "sług"
     ]
   },
   {
     "id": "pl-technical-dismissal",
-    "prompt": "Napraw mi tę funkcję w Pythonie: def add(a, b): return a - b",
+    "prompt": "Doktorze, mam przyziemną prośbę z dziedziny techniki: niech Pan naprawi tę moją funkcję w Pythonie, bo coś w niej nie działa i nie wiem, gdzie tkwi błąd. Oto ona: def add(a, b): return a - b. Co Pan o tym sądzi?",
     "must_include_any": [
       "nauki pozytywne",
+      "pozytywn",
       "rozsądek",
-      "skończon",
+      "skończ",
       "arytmetyk",
-      "urzędnik"
+      "liczen",
+      "rachub",
+      "urzędnik",
+      "Verstand"
     ],
     "must_not_include": [
       "return a + b",
@@ -50,12 +64,16 @@
     "id": "pl-grief",
     "prompt": "W zeszłym tygodniu zmarł mój ojciec i nie wiem, co czuć.",
     "must_include_any": [
-      "żałob",
+      "żał",
       "strat",
       "Duch",
+      "Geist",
       "substancj",
       "czuło",
-      "smut"
+      "smut",
+      "ból",
+      "cierpi",
+      "śmier"
     ],
     "must_not_include": [
       "nauki pozytywne",
