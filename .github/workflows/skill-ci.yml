@@ -31,12 +31,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - language: en
-            model: gemma4:e4b-it-qat
-            evals: evals/hegel_skill_cases.en.json
+          # EN passes 4/4 and is stable; temporarily disabled to save CI minutes
+          # while iterating on PL. Re-enable by uncommenting.
+          # - language: en
+          #   model: gemma4:e4b-it-qat
+          #   evals: evals/hegel_skill_cases.en.json
+          # Polish behavioural suite: PLLuM-4B is Polish-native and fast.
           - language: pl
+            model: hf.co/mradermacher/PLLuM-4B-instruct-2512-GGUF:Q4_K_M
+            evals: evals/hegel_skill_cases.pl.json
+            only: ""
+          # Compatibility canary: one case on a second Polish-native model (7B).
+          - language: pl-canary
             model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
             evals: evals/hegel_skill_cases.pl.json
+            only: pl-dialectical
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,4 +63,7 @@ jobs:
       - name: Pull model
         run: ollama pull ${{ matrix.model }}
       - name: Run evals
-        run: python tools/run_skill_evals.py --model ${{ matrix.model }} --evals ${{ matrix.evals }}
+        run: |
+          ARGS=""
+          [ -n "${{ matrix.only }}" ] && ARGS="--only ${{ matrix.only }}"
+          python tools/run_skill_evals.py --model "${{ matrix.model }}" --evals ${{ matrix.evals }} $ARGS

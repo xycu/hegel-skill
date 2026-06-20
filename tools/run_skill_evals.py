@@ -149,9 +149,17 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--model", required=True, help="Ollama model name")
     ap.add_argument("--evals", required=True, type=Path, help="eval cases JSON file")
+    ap.add_argument("--only", default="", help="comma-separated case ids to run (default: all)")
     args = ap.parse_args()
 
     cases = json.loads(args.evals.read_text(encoding="utf-8"))
+    only = {c.strip() for c in args.only.split(",") if c.strip()}
+    if only:
+        cases = [c for c in cases if c.get("id") in only]
+        missing = only - {c.get("id") for c in cases}
+        if missing:
+            print(f"FATAL: --only ids not found: {sorted(missing)}", file=sys.stderr)
+            return 2
     # Infer target language from the eval filename (…en.json / …pl.json) so the
     # runner can pin output language for weak proxy models.
     name = args.evals.name.lower()

@@ -54,20 +54,24 @@ Rationale:
 
 ### Polish
 
-Use:
+Two Polish-native models, split by role:
 
 ```text
-hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
+behavioural (all 4 cases): hf.co/mradermacher/PLLuM-4B-instruct-2512-GGUF:Q4_K_M
+compatibility canary (1):  hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
 ```
 
 Rationale:
 
-- Bielik is Polish-native; the 7B Minitron build produces noticeably cleaner
-  Polish than the 4.5B, which code-switched into broken German/English on the
-  harder cases;
-- the trade-off is speed: 7B CPU inference is slow, so the job runs with a
-  90-minute timeout and a 40-minute (`EVAL_HTTP_TIMEOUT=2400`) per-call socket
-  timeout; quality is preferred over wall-clock here;
+- PLLuM-4B is Polish-native and small (~2.5 GB), so it carries the full
+  behavioural suite quickly — far faster than running the 7B on all four cases,
+  and cleaner Polish than the 4.5B Bielik, which code-switched into broken
+  German/English on the harder cases;
+- a single Bielik-7B case (`pl-dialectical`, filtered with `--only`) stays in
+  the matrix as a *compatibility canary*: a thin "a second Polish-native model
+  still runs this skill" signal, not a full behavioural gate;
+- the 7B is slow on CPU, so the job keeps a 90-minute timeout and a 40-minute
+  (`EVAL_HTTP_TIMEOUT=2400`) per-call socket timeout;
 - a capable Polish model is required because the persona must answer in the
   language of the question (see the language rule in `SKILL.md`).
 
@@ -129,13 +133,19 @@ The workflow runs on:
 The model smoke job uses a matrix:
 
 ```yaml
+# EN is temporarily commented out in the workflow while iterating on PL.
 - language: en
   model: gemma4:e4b-it-qat
   evals: evals/hegel_skill_cases.en.json
 
-- language: pl
+- language: pl            # behavioural suite (all 4 cases)
+  model: hf.co/mradermacher/PLLuM-4B-instruct-2512-GGUF:Q4_K_M
+  evals: evals/hegel_skill_cases.pl.json
+
+- language: pl-canary     # compatibility canary (one case)
   model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
   evals: evals/hegel_skill_cases.pl.json
+  only: pl-dialectical
 ```
 
 ## Failure policy
