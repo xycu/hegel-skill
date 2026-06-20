@@ -99,7 +99,7 @@ def call_ollama(model: str, system: str, prompt: str) -> dict:
     # A 7B model on a CPU runner can take many minutes for one answer (load +
     # ~6k-token prompt eval + generation). The default socket timeout must cover
     # the slowest single call, not the whole job. Override with EVAL_HTTP_TIMEOUT.
-    timeout = int(os.environ.get("EVAL_HTTP_TIMEOUT", "1800"))
+    timeout = int(os.environ.get("EVAL_HTTP_TIMEOUT", "2400"))
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
