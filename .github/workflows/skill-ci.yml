@@ -1,0 +1,87 @@
+name: Skill CI
+
+on:
+  pull_request:
+    paths: &skill_paths
+      - 'skills/**'
+      - 'evals/**'
+      - 'tools/**'
+      - '.claude-plugin/**'
+      - '.github/workflows/skill-ci.yml'
+  push:
+    branches: [main]
+    paths: *skill_paths
+  workflow_dispatch:
+
+concurrency:
+  group: skill-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Deterministic skill lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Lint skill package
+        run: python tools/skill_lint.py
+
+  local-slm-smoke:
+    name: Local SLM smoke (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 90
+    # Canary jobs are informational compatibility checks: report pass/fail but
+    # never block the build (their models are third-party and may drift).
+    continue-on-error: ${{ matrix.canary == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Behavioural gates: gemma4:e4b-it-qat handles EN and PL 4/4.
+          - language: en
+            model: gemma4:e4b-it-qat
+            evals: evals/hegel_skill_cases.en.json
+            only: ""
+            canary: false
+          - language: pl
+            model: gemma4:e4b-it-qat
+            evals: evals/hegel_skill_cases.pl.json
+            only: ""
+            canary: false
+          # Compatibility canary: one Polish case on a Polish-native model
+          # (Bielik-7B). Non-blocking. PLLuM was dropped — too terse / breaks
+          # character at both 4B and 8B.
+          - language: pl-canary-bielik7b
+            model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
+            evals: evals/hegel_skill_cases.pl.json
+            only: pl-dialectical
+            canary: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+      - name: Start Ollama server
+        run: |
+          ollama serve &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:11434/api/tags >/dev/null && break
+            sleep 1
+          done
+      - name: Pull model
+        run: ollama pull ${{ matrix.model }}
+      - name: Run evals
+        # Canaries log full model output (EVAL_DEBUG) so the Polish answers are
+        # visible even when the case passes.
+        env:
+          EVAL_DEBUG: ${{ matrix.canary && '1' || '' }}
+        run: |
+          ARGS=""
+          [ -n "${{ matrix.only }}" ] && ARGS="--only ${{ matrix.only }}"
+          python tools/run_skill_evals.py --model "${{ matrix.model }}" --evals ${{ matrix.evals }} $ARGS
