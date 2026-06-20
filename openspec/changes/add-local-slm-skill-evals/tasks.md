@@ -70,8 +70,8 @@
 ## 7. Validation
 
 - [x] Run `python tools/skill_lint.py`.
-- [ ] Run English eval locally with `gemma3:1b`.
-- [ ] Run Polish eval locally with Bielik 1.5B.
-- [ ] Run GitHub Actions workflow on a pull request.
-- [ ] Fix any brittle assertions discovered during the first CI run.
+- [x] Run English eval locally with `gemma4:e4b-it-qat` (EN 4/4).
+- [x] Run Polish eval locally with `gemma4:e4b-it-qat` + Bielik-7B canary (PL 4/4).
+- [x] Run GitHub Actions workflow on a pull request (run 27869376371, all green).
+- [x] Fix any brittle assertions discovered during CI runs (broadened EN/PL markers to stems + the vocab the models use; made the slop footer advisory).
 - [x] Run `openspec validate add-local-slm-skill-evals --strict`.
