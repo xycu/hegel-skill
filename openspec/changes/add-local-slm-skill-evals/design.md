@@ -92,6 +92,13 @@ The eval runner loads:
 
 It injects both into the system prompt and then sends the eval case prompt as the user message.
 
+For non-English eval files the runner appends a short output-language directive
+after the skill content (which ends in English worked examples). A small local
+proxy model otherwise mirrors those English examples and answers in English even
+to a Polish prompt; the directive restates the skill's own language rule at
+maximum recency so the smoke test actually exercises the target language. It
+names no marker terms, so it does not feed the assertions their answers.
+
 This does not perfectly replicate Claude Code skill activation. It deliberately tests whether the skill instructions themselves are coherent and executable by a local model.
 
 ## Deterministic linting

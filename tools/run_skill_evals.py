@@ -30,15 +30,34 @@ REFERENCE = ROOT / "skills" / "soused-hegelian" / "references" / "hegel-referenc
 SLOP_FOOTER_MARKER = "slop:"  # checked alongside an N/10 digit run
 
 
-def build_system_prompt() -> str:
+LANG_NAMES = {"en": "English", "pl": "Polish"}
+
+
+def build_system_prompt(lang: str | None = None) -> str:
     skill = SKILL.read_text(encoding="utf-8")
     reference = REFERENCE.read_text(encoding="utf-8")
-    return (
+    prompt = (
         "You are running the following skill. Obey its instructions exactly, "
         "including any required output footer.\n\n"
         f"=== SKILL.md ===\n{skill}\n\n"
         f"=== references/hegel-reference.md ===\n{reference}\n"
     )
+    # The skill's worked examples are all in English and sit at the very end of
+    # the prompt — maximum recency. A small local model leans on them and answers
+    # in English even to a non-English question. The skill's own language rule is
+    # the real-runtime fix (a capable model obeys it); here we restate it last so
+    # the weak proxy model actually exercises the target language. No marker terms
+    # are named, so this does not feed the assertions their answers.
+    if lang in LANG_NAMES and lang != "en":
+        name = LANG_NAMES[lang]
+        prompt += (
+            f"\n=== OUTPUT LANGUAGE (overrides the language of the examples above) ===\n"
+            f"The user is writing in {name}. Write your ENTIRE answer in {name}; the "
+            f"English of the examples above is illustrative only and is not a licence to "
+            f"reply in English. Render Hegel's terminology in its standard {name} "
+            f"philosophical forms. Do not reply in any language other than {name}.\n"
+        )
+    return prompt
 
 
 def call_ollama(model: str, system: str, prompt: str) -> dict:
@@ -124,12 +143,16 @@ def main() -> int:
     args = ap.parse_args()
 
     cases = json.loads(args.evals.read_text(encoding="utf-8"))
-    system = build_system_prompt()
+    # Infer target language from the eval filename (…en.json / …pl.json) so the
+    # runner can pin output language for weak proxy models.
+    name = args.evals.name.lower()
+    lang = next((code for code in LANG_NAMES if f"{code}.json" in name or f".{code}." in name), None)
+    system = build_system_prompt(lang)
     host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
     show_full = os.environ.get("EVAL_DEBUG") == "1"
 
     total = len(cases)
-    log(f"== {args.model} | {args.evals.name} | {total} cases | host {host}")
+    log(f"== {args.model} | {args.evals.name} | lang={lang} | {total} cases | host {host}")
     log(f"   system prompt: {len(system)} chars")
 
     failed = 0
