@@ -26,8 +26,8 @@ locally (Ollama + Metal) before spending CI minutes.
 **Non-Goals:**
 - No new test framework or dependencies — wrap the existing scripts as-is.
 - No change to CI, to the eval runner, or to the skill package.
-- No automatic installing/pulling of Ollama or models; the runner reports the missing
-  prerequisite rather than fixing it.
+- No automatic installing of Ollama itself; an absent binary is reported, not fixed. (The
+  runner does *start* an already-installed server and *pull* a missing model.)
 
 ## Decisions
 
@@ -52,9 +52,17 @@ keeps the existing test file untouched.
 environment variable (and/or first positional arg), so `MODEL=other ./run-tests.sh` works
 for experimentation. The deterministic stages ignore the override.
 
-**Let `run_skill_evals.py` own the Ollama failure path.** It already exits non-zero when
-Ollama is unreachable, so the script does not re-implement a health check; a non-zero exit
-from the eval stage propagates to the aggregate result and the unreachable message surfaces.
+**The runner manages the Ollama server lifecycle.** Before the eval stages it probes
+`$OLLAMA_HOST/api/tags`: if a server answers, use it and leave it alone; if not and the
+`ollama` binary exists, start `ollama serve` in the background, wait for readiness, and
+record that *we* started it so an `EXIT`/`INT`/`TERM` trap shuts down only that server;
+if the binary is absent, fail the eval stages with a clear message. This makes the common
+"I forgot to start Ollama" case just work without leaking a server the developer didn't
+ask for. It also auto-pulls the model when `ollama show "$MODEL"` reports it absent, so a
+fresh checkout needs no manual `ollama pull`. The eval runner still owns the per-case
+Ollama errors.
+Alternative — let `run_skill_evals.py` fail when Ollama is down — was the first cut but
+forced the developer to start/stop the server by hand every run.
 
 ## Risks / Trade-offs
 

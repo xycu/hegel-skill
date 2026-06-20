@@ -6,9 +6,10 @@ This file provides guidance to coding agents (Claude Code and others that read A
 
 A Claude **plugin** with no code and no build system. It ships a single persona
 **skill** — Doktor Anselm Brandt, a ruined Hegelian philosopher — entirely as Markdown
-prose. There is nothing to build, lint, or test; "correctness" here means the prose
-keeps the persona coherent and the Hegel citations accurate. Validate changes by
-reading them, not by running anything.
+prose. There is no build system; "correctness" here means the prose keeps the persona
+coherent and the Hegel citations accurate. Validate changes mostly by reading them — but
+two automated guards exist (see "Tests" below), and behavioural changes go through
+OpenSpec (see "Spec-driven development").
 
 ## Layout that matters
 
@@ -58,6 +59,19 @@ These are the load-bearing rules of the persona; don't soften them by accident:
   regression; the answer above the rule stays wholly in character. The `stop-slop` skill
   dependency is **optional**: use it if present, else apply the inline de-slop fallback
   and flag its absence in the first answer's footer.
+
+## Tests
+
+Two automated layers guard against regressions (CI: `.github/workflows/skill-ci.yml`):
+`tools/skill_lint.py` (deterministic package/frontmatter lint, no model) and
+`tools/run_skill_evals.py` (local SLM smoke evals over Ollama, EN + PL on
+`gemma4:e4b-it-qat`). `tools/test_run_skill_evals.py` unit-tests the eval assertions.
+
+Run them all from the repo root with `./run-tests.sh` (lint + unit + EN/PL evals). It
+manages Ollama: uses a running server, starts one if installed-but-stopped and shuts that
+one down afterward, and auto-pulls the model if missing. Iterate locally before pushing —
+the SLM evals are the expensive CI minutes. These smoke evals catch obvious regressions
+only; they do **not** replace manual Claude Code validation before a release.
 
 ## Spec-driven development (OpenSpec)
 

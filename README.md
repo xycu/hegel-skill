@@ -88,14 +88,25 @@ literary quality and **do not replace manual Claude Code testing**. Before a
 release, still run the plugin in Claude Code and confirm it discovers and invokes
 the skill correctly.
 
-Run locally (stdlib Python 3.12+; Ollama only needed for the evals):
+Run everything locally with one command from the repo root — lint, the eval-runner
+unit test, and the EN + PL SLM evals, mirroring CI:
+
+```bash
+./run-tests.sh                  # lint + unit + EN evals + PL evals
+```
+
+`run-tests.sh` manages Ollama for you: if a server is already running it uses it; if
+Ollama is installed but stopped it starts one for the run and shuts it down afterward;
+and it auto-pulls the eval model if it is missing. If Ollama is not installed it fails
+(the evals cannot run). It exits non-zero if any stage fails. Override the eval model
+with `MODEL=other-model ./run-tests.sh` or `./run-tests.sh other-model`.
+
+To run the layers individually (stdlib Python 3.12+; Ollama only needed for the evals):
 
 ```bash
 python tools/skill_lint.py                                          # lint, no model
-ollama pull gemma3:1b
-python tools/run_skill_evals.py --model gemma3:1b --evals evals/hegel_skill_cases.en.json
-ollama pull SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0
-python tools/run_skill_evals.py --model SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0 --evals evals/hegel_skill_cases.pl.json
+python tools/run_skill_evals.py --model gemma4:e4b-it-qat --evals evals/hegel_skill_cases.en.json
+python tools/run_skill_evals.py --model gemma4:e4b-it-qat --evals evals/hegel_skill_cases.pl.json
 ```
 
 `OLLAMA_HOST` overrides the server URL (default `http://localhost:11434`).

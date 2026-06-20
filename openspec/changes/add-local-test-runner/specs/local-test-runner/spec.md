@@ -46,21 +46,52 @@ predicts a CI pass. It SHALL NOT silently skip the SLM evals.
 - **AND** the English stage SHALL run `evals/hegel_skill_cases.en.json`
 - **AND** the Polish stage SHALL run `evals/hegel_skill_cases.pl.json`.
 
-#### Scenario: Ollama is unavailable
+#### Scenario: Ollama is not installed
 
-- **GIVEN** the Ollama server is not reachable
+- **GIVEN** Ollama is neither running nor installed
 - **WHEN** the test runner executes
 - **THEN** the runner SHALL fail
 - **AND** the runner SHALL exit with a non-zero status code
-- **AND** the runner SHALL report that Ollama is unreachable.
+- **AND** the runner SHALL report that Ollama is unavailable.
 
-#### Scenario: Configured model is not available
+#### Scenario: Configured model is not present locally
 
 - **GIVEN** the Ollama server is reachable
 - **AND** the configured model is not present locally
-- **WHEN** the SLM eval stage executes
+- **WHEN** the test runner reaches the SLM eval stages
+- **THEN** the runner SHALL pull the configured model automatically
+- **AND** the SLM eval stages SHALL then run against it.
+
+#### Scenario: Configured model cannot be pulled
+
+- **GIVEN** the Ollama server is reachable
+- **AND** the configured model is not present locally
+- **AND** the model cannot be pulled (e.g. the name is invalid)
+- **WHEN** the test runner attempts to pull it
 - **THEN** the runner SHALL fail
 - **AND** the runner SHALL exit with a non-zero status code.
+
+---
+
+### Requirement: Ollama lifecycle management
+
+The test runner SHALL manage the Ollama server it needs for the SLM evals: it SHALL
+use an already-running server as-is, start one if Ollama is installed but stopped, and
+shut down only a server it started itself.
+
+#### Scenario: Ollama already running
+
+- **GIVEN** an Ollama server is already reachable
+- **WHEN** the test runner runs the SLM eval stages
+- **THEN** the runner SHALL use the running server
+- **AND** the runner SHALL leave that server running after it finishes.
+
+#### Scenario: Ollama installed but stopped
+
+- **GIVEN** Ollama is installed but no server is running
+- **WHEN** the test runner reaches the SLM eval stages
+- **THEN** the runner SHALL start an Ollama server for the run
+- **AND** the runner SHALL shut down that server when it finishes (including on failure).
 
 ---
 
