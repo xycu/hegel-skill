@@ -85,10 +85,13 @@ two whole files; a function is clearer and testable by just running the suite.
 
 | custom schema | promptfoo assertion | notes |
 |---|---|---|
-| `must_include_any` | `contains-any` | case-sensitive, as today |
-| `must_include_all` | `contains-all` | case-sensitive, as today |
-| `must_not_include` | `not-icontains` | case-insensitive, matching the old runner |
-| `slop:` footer (advisory) | `regex: 'slop:\s*\d+\s*/\s*10'` with `weight: 0` | non-blocking metric |
+| `must_include_any` | `icontains-any` | case-insensitive — the old runner lowercased both sides |
+| `must_include_all` | `icontains-all` | case-insensitive, ditto |
+| `must_not_include` | `not-icontains-any` | passes when none of the terms appear (case-insensitive) |
+| `slop:` footer (advisory) | `regex: '[Ss][Ll][Oo][Pp]:\s*\d+\s*/\s*10'` with `weight: 0` | non-blocking metric |
+
+(The prior runner's `check_case` lowercases both the output and every term, so all three
+checks are case-insensitive; the `i`-variants reproduce that exactly.)
 
 The `weight: 0` footer assertion is promptfoo's idiom for a tracking assertion that
 contributes a metric but never fails the test — exactly the old advisory semantics.

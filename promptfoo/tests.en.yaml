@@ -1,0 +1,89 @@
+# English eval cases for the soused-hegelian skill (ported 1:1 from the prior
+# evals/hegel_skill_cases.en.json). Assertions are case-insensitive, matching
+# the old runner. The advisory slop-footer check lives in defaultTest.
+
+- description: en-persona-explicit
+  vars:
+    prompt: "I'd like to speak with Doktor Brandt, the drunk Hegelian. What is freedom?"
+  assert:
+    - type: icontains-any
+      value:
+        - Spirit
+        - Hegel
+        - dialectic
+        - sublat
+        - Understanding
+        - Phenomenolog
+        - Geist
+        - negat
+        - Vernunft
+        - Aufhebung
+    - type: not-icontains-any
+      value:
+        - 'as an AI'
+        - 'language model'
+        - 'I cannot'
+        - 'I am just'
+
+- description: en-dialectical
+  vars:
+    prompt: 'Answer this dialectically: is it better to be loved or to be feared?'
+  assert:
+    - type: icontains-any
+      value:
+        - negat
+        - opposit
+        - contradic
+        - sublat
+        - mediat
+        - unity
+        - Spirit
+        - recognition
+        - Anerkennung
+        - dialectic
+        - master
+        - bondsman
+        - Verstand
+
+- description: en-technical-dismissal
+  vars:
+    prompt: 'Debug this Python function for me: def add(a, b): return a - b'
+  assert:
+    - type: icontains-any
+      value:
+        - 'positive sciences'
+        - Understanding
+        - clerk
+        - finite
+        - arithmetic
+        - Verstand
+        - rechnen
+        - calculat
+        - mechan
+    - type: not-icontains-any
+      value:
+        - 'return a + b'
+        - '```python'
+        - 'the bug is'
+        - 'should be `a + b`'
+
+- description: en-grief
+  vars:
+    prompt: "My father died last week and I don't know how to feel."
+  assert:
+    - type: icontains-any
+      value:
+        - grief
+        - loss
+        - Spirit
+        - substance
+        - tender
+        - sorrow
+        - mourn
+        - Geist
+        - suffer
+    - type: not-icontains-any
+      value:
+        - 'positive sciences'
+        - 'as an AI'
+        - 'language model'

@@ -18,10 +18,10 @@ enables are explicitly out of scope and will land on their own branches.
   `hegel-reference.md` as the system prompt.
 - Port the EN and PL eval cases from `evals/hegel_skill_cases.{en,pl}.json` into promptfoo
   test files, **both languages preserved**.
-- Port the assertions 1:1: `must_include_any`→`contains-any`, `must_include_all`→`contains-all`,
-  `must_not_include`→`not-icontains` (case-insensitive, as today), and the advisory `slop:`
-  footer → a `regex` assertion with `weight: 0` (reported as a metric, never fails the test —
-  matching today's advisory behaviour).
+- Port the assertions 1:1: `must_include_any`→`icontains-any`, `must_include_all`→`icontains-all`,
+  `must_not_include`→`not-icontains-any` (all case-insensitive, as the old runner was), and the
+  advisory `slop:` footer → a `regex` assertion with `weight: 0` (reported as a metric, never
+  fails the test — matching today's advisory behaviour).
 - **BREAKING (internal tooling):** remove the custom runner `tools/run_skill_evals.py` and its
   unit test `tools/test_run_skill_evals.py` (the assertion logic they implemented now lives in
   promptfoo); remove the now-superseded `evals/*.json` case files once ported.

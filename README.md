@@ -77,39 +77,43 @@ The skill is prose, but two automated layers guard against regressions (CI:
    the plugin/marketplace JSON, the `SKILL.md` frontmatter (`name`,
    `description`, activation terms), and that the body still documents the
    load-bearing behaviours. No model, no dependencies.
-2. **Local SLM smoke evals** — `tools/run_skill_evals.py` runs the skill against
-   small local models via [Ollama](https://ollama.com) and checks shallow,
-   contract-based markers (`must_include_any` / `must_include_all` /
-   `must_not_include` plus the `slop:` footer). English uses `gemma3:1b`; Polish
-   uses `SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0`.
+2. **Local SLM smoke evals** — [promptfoo](https://www.promptfoo.dev/) runs the
+   skill against a small local model via [Ollama](https://ollama.com) and checks
+   shallow, contract-based markers (`icontains-any` / `icontains-all` /
+   `not-icontains-any`) plus an advisory `slop:` footer metric. The configs live
+   under [`promptfoo/`](promptfoo/) (EN + PL); both default to `gemma4:e4b-it-qat`.
 
 These smoke evals catch obvious regressions only — they are **not** a measure of
 literary quality and **do not replace manual Claude Code testing**. Before a
 release, still run the plugin in Claude Code and confirm it discovers and invokes
 the skill correctly.
 
-Run everything locally with one command from the repo root — lint, the eval-runner
-unit test, and the EN + PL SLM evals, mirroring CI:
+Run everything locally with one command from the repo root — lint plus the EN + PL
+promptfoo evals, mirroring CI:
 
 ```bash
-./run-tests.sh                  # lint + unit + EN evals + PL evals
+./run-tests.sh                  # lint + EN evals + PL evals
 ```
 
 `run-tests.sh` manages Ollama for you: if a server is already running it uses it; if
 Ollama is installed but stopped it starts one for the run and shuts it down afterward;
 and it auto-pulls the eval model if it is missing. If Ollama is not installed it fails
 (the evals cannot run). It exits non-zero if any stage fails. Override the eval model
-with `MODEL=other-model ./run-tests.sh` or `./run-tests.sh other-model`.
+with `MODEL=other-model ./run-tests.sh` or `./run-tests.sh other-model`. promptfoo is
+used from a global install (`npm install -g promptfoo`) if present, otherwise fetched
+via a pinned `npx` — no install step required.
 
-To run the layers individually (stdlib Python 3.12+; Ollama only needed for the evals):
+To run the layers individually (Python 3.12+ for the lint; Node + Ollama for the evals):
 
 ```bash
-python tools/skill_lint.py                                          # lint, no model
-python tools/run_skill_evals.py --model gemma4:e4b-it-qat --evals evals/hegel_skill_cases.en.json
-python tools/run_skill_evals.py --model gemma4:e4b-it-qat --evals evals/hegel_skill_cases.pl.json
+python tools/skill_lint.py                              # lint, no model
+promptfoo eval -c promptfoo/promptfooconfig.en.yaml     # English evals
+promptfoo eval -c promptfoo/promptfooconfig.pl.yaml     # Polish evals
 ```
 
-`OLLAMA_HOST` overrides the server URL (default `http://localhost:11434`).
+Set `EVAL_MODEL` to override the eval model (default `gemma4:e4b-it-qat`).
+`OLLAMA_BASE_URL` overrides the server URL (default `http://localhost:11434`);
+`run-tests.sh` also accepts the legacy `OLLAMA_HOST` and mirrors it across.
 
 ## Installing
 

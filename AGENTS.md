@@ -82,15 +82,20 @@ When both gates pass, append the aside as a **final paragraph**, blank-line-sepa
 ## Tests
 
 Two automated layers guard against regressions (CI: `.github/workflows/skill-ci.yml`):
-`tools/skill_lint.py` (deterministic package/frontmatter lint, no model) and
-`tools/run_skill_evals.py` (local SLM smoke evals over Ollama, EN + PL on
-`gemma4:e4b-it-qat`). `tools/test_run_skill_evals.py` unit-tests the eval assertions.
+`tools/skill_lint.py` (deterministic package/frontmatter lint, no model) and the
+[promptfoo](https://www.promptfoo.dev/) SLM smoke evals (`promptfoo/`, EN + PL configs
+over Ollama on `gemma4:e4b-it-qat`). Assertions are promptfoo contract checks
+(`icontains-any` / `icontains-all` / `not-icontains-any`, case-insensitive); the `slop:`
+footer is an advisory weight-0 metric, never a failure. The system prompt (SKILL.md +
+reference, plus a Polish language directive for weak proxy models) is assembled by
+`promptfoo/prompt.js`.
 
-Run them all from the repo root with `./run-tests.sh` (lint + unit + EN/PL evals). It
-manages Ollama: uses a running server, starts one if installed-but-stopped and shuts that
-one down afterward, and auto-pulls the model if missing. Iterate locally before pushing —
-the SLM evals are the expensive CI minutes. These smoke evals catch obvious regressions
-only; they do **not** replace manual Claude Code validation before a release.
+Run them all from the repo root with `./run-tests.sh` (lint + EN/PL evals). It manages
+Ollama: uses a running server, starts one if installed-but-stopped and shuts that one
+down afterward, and auto-pulls the model if missing. promptfoo is used from a global
+install if present, else a pinned `npx`. Iterate locally before pushing — the SLM evals
+are the expensive CI minutes. These smoke evals catch obvious regressions only; they do
+**not** replace manual Claude Code validation before a release.
 
 ## Spec-driven development (OpenSpec)
 

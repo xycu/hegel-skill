@@ -1,0 +1,32 @@
+# English SLM smoke evals for the soused-hegelian skill.
+# Run: promptfoo eval -c promptfoo/promptfooconfig.en.yaml
+# Model: set EVAL_MODEL (default gemma4:e4b-it-qat). Host: OLLAMA_BASE_URL.
+description: soused-hegelian EN smoke evals
+
+prompts:
+  - file://prompt.js
+
+providers:
+  - id: 'ollama:chat:{{ env.EVAL_MODEL | default("gemma4:e4b-it-qat") }}'
+    config:
+      # num_ctx must exceed the injected SKILL.md+reference or Ollama silently
+      # truncates the prompt to its 4096 default and the model produces garbage.
+      num_ctx: 12288
+      # Full Brandt answers run long; smaller budgets truncate them mid-sentence.
+      num_predict: 1600
+      temperature: 0.7
+      seed: 7
+
+defaultTest:
+  vars:
+    lang: en
+  assert:
+    # The slop footer is advisory: a bare system-prompted local model (no
+    # stop-slop skill) usually can't perform the self-scoring loop. weight 0 =
+    # tracked as a metric, never fails the case.
+    - type: regex
+      value: '[Ss][Ll][Oo][Pp]:\s*\d+\s*/\s*10'
+      weight: 0
+      metric: slop_footer
+
+tests: file://tests.en.yaml

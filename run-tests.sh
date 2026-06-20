@@ -1,7 +1,8 @@
 #!/bin/sh
 # Run every local test in one command, mirroring CI.
 #
-# Stages (fastest first): skill lint -> eval-runner unit test -> EN evals -> PL evals.
+# Stages (fastest first): skill lint -> EN evals -> PL evals.
+# The evals run via promptfoo (configs under promptfoo/).
 # All stages run even if an earlier one fails; the script exits non-zero if any did.
 #
 # Ollama lifecycle (the SLM eval stages need it):
@@ -15,8 +16,9 @@
 #   MODEL=other-model ./run-tests.sh
 #   ./run-tests.sh other-model     # positional override
 #
-# Prerequisites: Python 3.12, Ollama, and the model pulled
-# (`ollama pull gemma4:e4b-it-qat`). OLLAMA_HOST overrides the server URL.
+# Prerequisites: Python 3.12, Node (for promptfoo), and Ollama. promptfoo is used
+# from a global install if present, else fetched via `npx` (pinned). The model is
+# pulled automatically. OLLAMA_HOST overrides the server URL.
 set -u
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -26,8 +28,23 @@ PYTHON=${PYTHON:-python}
 MODEL=${1:-${MODEL:-gemma4:e4b-it-qat}}
 OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
 export OLLAMA_HOST
-EVALS_EN=evals/hegel_skill_cases.en.json
-EVALS_PL=evals/hegel_skill_cases.pl.json
+# promptfoo reads OLLAMA_BASE_URL; mirror OLLAMA_HOST onto it. The eval model is
+# handed to the promptfoo configs via EVAL_MODEL (so --model override still works).
+OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-$OLLAMA_HOST}
+export OLLAMA_BASE_URL
+EVAL_MODEL=$MODEL
+export EVAL_MODEL
+CONFIG_EN=promptfoo/promptfooconfig.en.yaml
+CONFIG_PL=promptfoo/promptfooconfig.pl.yaml
+
+# Resolve promptfoo: prefer a global binary (fast), else a pinned npx (zero-install,
+# reproducible). CI installs the same pinned version, so a local pass predicts CI.
+PROMPTFOO_VERSION=${PROMPTFOO_VERSION:-0.121.17}
+if command -v promptfoo >/dev/null 2>&1; then
+    PROMPTFOO="promptfoo"
+else
+    PROMPTFOO="npx -y promptfoo@${PROMPTFOO_VERSION}"
+fi
 
 summary=""
 overall=0
@@ -106,12 +123,13 @@ fail() {
 }
 
 run "lint"  "$PYTHON" tools/skill_lint.py
-# The unit test does `from run_skill_evals import ...`, so run it with tools/ on the path.
-run "unit"  sh -c 'cd tools && "$0" test_run_skill_evals.py' "$PYTHON"
 
 if ensure_ollama && ensure_model; then
-    run "evals:en"  "$PYTHON" tools/run_skill_evals.py --model "$MODEL" --evals "$EVALS_EN"
-    run "evals:pl"  "$PYTHON" tools/run_skill_evals.py --model "$MODEL" --evals "$EVALS_PL"
+    printf 'Using promptfoo: %s\n' "$PROMPTFOO"
+    # $PROMPTFOO is intentionally unquoted (it may be "npx -y promptfoo@<v>").
+    # --no-cache so each run really calls the model, matching CI (fresh runner).
+    run "evals:en"  $PROMPTFOO eval -c "$CONFIG_EN" --no-cache
+    run "evals:pl"  $PROMPTFOO eval -c "$CONFIG_PL" --no-cache
 else
     fail "evals:en" "Skipped: Ollama unavailable or model could not be pulled."
     fail "evals:pl" "Skipped: Ollama unavailable or model could not be pulled."

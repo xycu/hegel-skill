@@ -4,9 +4,10 @@ on:
   pull_request:
     paths: &skill_paths
       - 'skills/**'
-      - 'evals/**'
+      - 'promptfoo/**'
       - 'tools/**'
       - '.claude-plugin/**'
+      - 'run-tests.sh'
       - '.github/workflows/skill-ci.yml'
   push:
     branches: [main]
@@ -16,6 +17,10 @@ on:
 concurrency:
   group: skill-ci-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  # Single source of truth for the promptfoo version (matches run-tests.sh).
+  PROMPTFOO_VERSION: "0.121.17"
 
 jobs:
   lint:
@@ -44,27 +49,29 @@ jobs:
           # Behavioural gates: gemma4:e4b-it-qat handles EN and PL 4/4.
           - language: en
             model: gemma4:e4b-it-qat
-            evals: evals/hegel_skill_cases.en.json
-            only: ""
+            config: promptfoo/promptfooconfig.en.yaml
+            filter: ""
             canary: false
           - language: pl
             model: gemma4:e4b-it-qat
-            evals: evals/hegel_skill_cases.pl.json
-            only: ""
+            config: promptfoo/promptfooconfig.pl.yaml
+            filter: ""
             canary: false
           # Compatibility canary: one Polish case on a Polish-native model
           # (Bielik-7B). Non-blocking. PLLuM was dropped — too terse / breaks
           # character at both 4B and 8B.
           - language: pl-canary-bielik7b
             model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
-            evals: evals/hegel_skill_cases.pl.json
-            only: pl-dialectical
+            config: promptfoo/promptfooconfig.pl.yaml
+            filter: pl-dialectical
             canary: true
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
+          node-version: "20"
+      - name: Install promptfoo
+        run: npm install -g promptfoo@"${PROMPTFOO_VERSION}"
       - name: Install Ollama
         run: curl -fsSL https://ollama.com/install.sh | sh
       - name: Start Ollama server
@@ -77,11 +84,12 @@ jobs:
       - name: Pull model
         run: ollama pull ${{ matrix.model }}
       - name: Run evals
-        # Canaries log full model output (EVAL_DEBUG) so the Polish answers are
-        # visible even when the case passes.
+        # EVAL_MODEL feeds the promptfoo provider id; OLLAMA_BASE_URL defaults to
+        # the local server. Canaries log full output (--verbose) and filter to one case.
         env:
-          EVAL_DEBUG: ${{ matrix.canary && '1' || '' }}
+          EVAL_MODEL: ${{ matrix.model }}
         run: |
           ARGS=""
-          [ -n "${{ matrix.only }}" ] && ARGS="--only ${{ matrix.only }}"
-          python tools/run_skill_evals.py --model "${{ matrix.model }}" --evals ${{ matrix.evals }} $ARGS
+          [ -n "${{ matrix.filter }}" ] && ARGS="--filter-pattern ${{ matrix.filter }}"
+          [ "${{ matrix.canary }}" = "true" ] && ARGS="$ARGS --verbose"
+          promptfoo eval -c ${{ matrix.config }} --no-cache $ARGS

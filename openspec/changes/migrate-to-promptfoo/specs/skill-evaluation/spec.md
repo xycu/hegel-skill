@@ -44,46 +44,47 @@ configuration rather than a bespoke runner.
 The system SHALL evaluate local SLM outputs using promptfoo's deterministic
 contract-based assertions rather than exact output matching. The assertion semantics
 mirror the prior custom runner: a required-any term set, a required-all term set, and a
-forbidden term set (case-insensitive).
+forbidden term set, all matched case-insensitively (the prior runner lowercased both the
+output and the terms).
 
 #### Scenario: Required-any assertion passes
 
-- **GIVEN** an eval case defines a `contains-any` assertion
-- **AND** the model output contains at least one listed term
+- **GIVEN** an eval case defines an `icontains-any` assertion
+- **AND** the model output contains at least one listed term (case-insensitive)
 - **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL pass.
 
 #### Scenario: Required-any assertion fails
 
-- **GIVEN** an eval case defines a `contains-any` assertion
+- **GIVEN** an eval case defines an `icontains-any` assertion
 - **AND** the model output contains none of the listed terms
 - **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL fail.
 
 #### Scenario: Required-all assertion passes
 
-- **GIVEN** an eval case defines a `contains-all` assertion
-- **AND** the model output contains every listed term
+- **GIVEN** an eval case defines an `icontains-all` assertion
+- **AND** the model output contains every listed term (case-insensitive)
 - **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL pass.
 
 #### Scenario: Required-all assertion fails
 
-- **GIVEN** an eval case defines a `contains-all` assertion
+- **GIVEN** an eval case defines an `icontains-all` assertion
 - **AND** the model output omits at least one listed term
 - **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL fail.
 
 #### Scenario: Forbidden-term assertion passes
 
-- **GIVEN** an eval case defines a `not-icontains` assertion
+- **GIVEN** an eval case defines a `not-icontains-any` assertion
 - **AND** the model output contains none of the listed terms (case-insensitive)
 - **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL pass.
 
 #### Scenario: Forbidden-term assertion fails
 
-- **GIVEN** an eval case defines a `not-icontains` assertion
+- **GIVEN** an eval case defines a `not-icontains-any` assertion
 - **AND** the model output contains at least one listed term (case-insensitive)
 - **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL fail.
