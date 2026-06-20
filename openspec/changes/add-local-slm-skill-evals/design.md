@@ -35,9 +35,9 @@ GitHub Actions
 
 ## Model strategy
 
-### English
+### Behavioural gate (English and Polish)
 
-Use:
+Use one model for both languages:
 
 ```text
 gemma4:e4b-it-qat
@@ -46,34 +46,35 @@ gemma4:e4b-it-qat
 Rationale:
 
 - Gemma 4 E4B (effective-4B), quantization-aware-trained at Q4_0, so it keeps
-  near-fp16 quality at 4-bit;
-- ~6.2 GB to load — smaller than the `e2b` fp16 build yet more capable, and
-  4-bit speeds up CPU inference on the standard runner (4 vCPU / 16 GB RAM);
-- earlier tiny models (`gemma3:1b`, `gemma4:e2b`) returned near-empty output;
-  the smoke job allows 45 minutes for CPU inference at this size.
+  near-fp16 quality at 4-bit (~6.2 GB);
+- it is the strongest instruction-follower tried and genuinely multilingual: it
+  passes EN **and** PL 4/4, producing high-register in-character Polish (it
+  dismisses the technical case in Polish rather than fixing the code). Smaller
+  Polish models either code-switched (Bielik-4.5B) or were terse and broke
+  character (PLLuM-4B); the slow 7B worked but cost 60–80 min;
+- it uses a reasoning channel, so `num_predict` must be high enough (1600) for it
+  to finish thinking before emitting content (see the eval runner notes).
 
-### Polish
+### Compatibility canaries (Polish-native, non-blocking)
 
-Two Polish-native models, split by role:
+One Polish case (`pl-dialectical`, via `--only`) on each of two Polish-native
+models from different families:
 
 ```text
-behavioural (all 4 cases): hf.co/mradermacher/PLLuM-4B-instruct-2512-GGUF:Q4_K_M
-compatibility canary (1):  hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
+hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
+hf.co/mradermacher/Llama-PLLuM-8B-instruct-2512-GGUF:Q4_K_M
 ```
 
 Rationale:
 
-- PLLuM-4B is Polish-native and small (~2.5 GB), so it carries the full
-  behavioural suite quickly — far faster than running the 7B on all four cases,
-  and cleaner Polish than the 4.5B Bielik, which code-switched into broken
-  German/English on the harder cases;
-- a single Bielik-7B case (`pl-dialectical`, filtered with `--only`) stays in
-  the matrix as a *compatibility canary*: a thin "a second Polish-native model
-  still runs this skill" signal, not a full behavioural gate;
-- the 7B is slow on CPU, so the job keeps a 90-minute timeout and a 40-minute
-  (`EVAL_HTTP_TIMEOUT=2400`) per-call socket timeout;
-- a capable Polish model is required because the persona must answer in the
-  language of the question (see the language rule in `SKILL.md`).
+- the gate model (gemma) is multilingual but not Polish-native; the canaries are
+  a thin "a real Polish-native model still runs this skill" signal across the two
+  main Polish model families (Bielik / Llama-PLLuM);
+- they are **non-blocking** (`continue-on-error`): third-party models may drift,
+  so a canary reports pass/fail but never fails the build;
+- they are slow 7–8B CPU jobs, so the job keeps a 90-minute timeout and a
+  40-minute (`EVAL_HTTP_TIMEOUT=2400`) per-call socket timeout. They run in
+  parallel with the gates, so they do not extend wall-clock much.
 
 ## Eval file format
 
@@ -133,19 +134,25 @@ The workflow runs on:
 The model smoke job uses a matrix:
 
 ```yaml
-# EN is temporarily commented out in the workflow while iterating on PL.
+# Behavioural gates (blocking)
 - language: en
   model: gemma4:e4b-it-qat
   evals: evals/hegel_skill_cases.en.json
-
-- language: pl            # behavioural suite (all 4 cases)
-  model: hf.co/mradermacher/PLLuM-4B-instruct-2512-GGUF:Q4_K_M
+- language: pl
+  model: gemma4:e4b-it-qat
   evals: evals/hegel_skill_cases.pl.json
 
-- language: pl-canary     # compatibility canary (one case)
+# Compatibility canaries (one PL case each, non-blocking)
+- language: pl-canary-bielik7b
   model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
   evals: evals/hegel_skill_cases.pl.json
   only: pl-dialectical
+  canary: true
+- language: pl-canary-pllum8b
+  model: hf.co/mradermacher/Llama-PLLuM-8B-instruct-2512-GGUF:Q4_K_M
+  evals: evals/hegel_skill_cases.pl.json
+  only: pl-dialectical
+  canary: true
 ```
 
 ## Failure policy

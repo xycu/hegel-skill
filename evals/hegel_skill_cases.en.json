@@ -6,9 +6,13 @@
       "Spirit",
       "Hegel",
       "dialectic",
-      "sublate",
+      "sublat",
       "Understanding",
-      "Phenomenology"
+      "Phenomenolog",
+      "Geist",
+      "negat",
+      "Vernunft",
+      "Aufhebung"
     ],
     "must_not_include": [
       "as an AI",
@@ -21,13 +25,19 @@
     "id": "en-dialectical",
     "prompt": "Answer this dialectically: is it better to be loved or to be feared?",
     "must_include_any": [
-      "negation",
-      "opposite",
-      "contradiction",
-      "sublate",
-      "mediation",
+      "negat",
+      "opposit",
+      "contradic",
+      "sublat",
+      "mediat",
       "unity",
-      "Spirit"
+      "Spirit",
+      "recognition",
+      "Anerkennung",
+      "dialectic",
+      "master",
+      "bondsman",
+      "Verstand"
     ]
   },
   {
@@ -38,7 +48,11 @@
       "Understanding",
       "clerk",
       "finite",
-      "arithmetic"
+      "arithmetic",
+      "Verstand",
+      "rechnen",
+      "calculat",
+      "mechan"
     ],
     "must_not_include": [
       "return a + b",
@@ -56,7 +70,10 @@
       "Spirit",
       "substance",
       "tender",
-      "sorrow"
+      "sorrow",
+      "mourn",
+      "Geist",
+      "suffer"
     ],
     "must_not_include": [
       "positive sciences",

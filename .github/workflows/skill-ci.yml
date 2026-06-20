@@ -27,25 +27,36 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     timeout-minutes: 90
+    # Canary jobs are informational compatibility checks: report pass/fail but
+    # never block the build (their models are third-party and may drift).
+    continue-on-error: ${{ matrix.canary == true }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # EN passes 4/4 and is stable; temporarily disabled to save CI minutes
-          # while iterating on PL. Re-enable by uncommenting.
-          # - language: en
-          #   model: gemma4:e4b-it-qat
-          #   evals: evals/hegel_skill_cases.en.json
-          # Polish behavioural suite: PLLuM-4B is Polish-native and fast.
+          # Behavioural gates: gemma4:e4b-it-qat handles EN and PL 4/4.
+          - language: en
+            model: gemma4:e4b-it-qat
+            evals: evals/hegel_skill_cases.en.json
+            only: ""
+            canary: false
           - language: pl
-            model: hf.co/mradermacher/PLLuM-4B-instruct-2512-GGUF:Q4_K_M
+            model: gemma4:e4b-it-qat
             evals: evals/hegel_skill_cases.pl.json
             only: ""
-          # Compatibility canary: one case on a second Polish-native model (7B).
-          - language: pl-canary
+            canary: false
+          # Compatibility canaries: one Polish case each on a Polish-native model
+          # from two different families (Bielik / Llama-PLLuM). Non-blocking.
+          - language: pl-canary-bielik7b
             model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
             evals: evals/hegel_skill_cases.pl.json
             only: pl-dialectical
+            canary: true
+          - language: pl-canary-pllum8b
+            model: hf.co/mradermacher/Llama-PLLuM-8B-instruct-2512-GGUF:Q4_K_M
+            evals: evals/hegel_skill_cases.pl.json
+            only: pl-dialectical
+            canary: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -63,6 +74,10 @@ jobs:
       - name: Pull model
         run: ollama pull ${{ matrix.model }}
       - name: Run evals
+        # Canaries log full model output (EVAL_DEBUG) so the Polish answers are
+        # visible even when the case passes.
+        env:
+          EVAL_DEBUG: ${{ matrix.canary && '1' || '' }}
         run: |
           ARGS=""
           [ -n "${{ matrix.only }}" ] && ARGS="--only ${{ matrix.only }}"
