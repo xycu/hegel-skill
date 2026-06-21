@@ -1,0 +1,26 @@
+# Polish SLM smoke evals for the soused-hegelian skill.
+# Run: promptfoo eval -c promptfoo/promptfooconfig.pl.yaml
+# Model: set EVAL_MODEL (default gemma4:e4b-it-qat). Host: OLLAMA_BASE_URL.
+description: soused-hegelian PL smoke evals
+
+prompts:
+  - file://prompt.js
+
+providers:
+  - id: 'ollama:chat:{{ env.EVAL_MODEL | default("gemma4:e4b-it-qat") }}'
+    config:
+      num_ctx: 12288
+      num_predict: 1600
+      temperature: 0.7
+      seed: 7
+
+defaultTest:
+  vars:
+    lang: pl
+  assert:
+    - type: regex
+      value: '[Ss][Ll][Oo][Pp]:\s*\d+\s*/\s*10'
+      weight: 0
+      metric: slop_footer
+
+tests: file://tests.pl.yaml

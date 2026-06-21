@@ -1,8 +1,5 @@
-# local-test-runner Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change add-local-test-runner. Update Purpose after archive.
-## Requirements
 ### Requirement: Single-command local test runner
 
 The system SHALL provide a single executable command, runnable from the repository
@@ -74,52 +71,3 @@ pass predicts a CI pass. It SHALL NOT silently skip the SLM evals.
 - **WHEN** the test runner attempts to pull it
 - **THEN** the runner SHALL fail
 - **AND** the runner SHALL exit with a non-zero status code.
-
-### Requirement: Ollama lifecycle management
-
-The test runner SHALL manage the Ollama server it needs for the SLM evals: it SHALL
-use an already-running server as-is, start one if Ollama is installed but stopped, and
-shut down only a server it started itself.
-
-#### Scenario: Ollama already running
-
-- **GIVEN** an Ollama server is already reachable
-- **WHEN** the test runner runs the SLM eval stages
-- **THEN** the runner SHALL use the running server
-- **AND** the runner SHALL leave that server running after it finishes.
-
-#### Scenario: Ollama installed but stopped
-
-- **GIVEN** Ollama is installed but no server is running
-- **WHEN** the test runner reaches the SLM eval stages
-- **THEN** the runner SHALL start an Ollama server for the run
-- **AND** the runner SHALL shut down that server when it finishes (including on failure).
-
----
-
-### Requirement: Model override
-
-The test runner SHALL allow the developer to override the eval model for local
-experimentation without editing the script.
-
-#### Scenario: Override the model
-
-- **GIVEN** the developer wants to run the evals against a different Ollama model
-- **WHEN** the developer supplies a model override (argument or environment variable)
-- **THEN** the SLM eval stages SHALL use the supplied model
-- **AND** the deterministic stages SHALL run unchanged.
-
----
-
-### Requirement: Local execution documentation
-
-The system SHALL document the single command as the canonical way to run all tests
-locally before pushing.
-
-#### Scenario: Documented command
-
-- **GIVEN** a developer reads the project documentation
-- **WHEN** they look for how to run all tests locally
-- **THEN** the documentation SHALL name the single root-level command
-- **AND** it SHALL state the prerequisites (Python and a running Ollama with the model pulled).
-
