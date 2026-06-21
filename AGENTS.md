@@ -11,6 +11,32 @@ coherent and the Hegel citations accurate. Validate changes mostly by reading th
 two automated guards exist (see "Tests" below), and behavioural changes go through
 OpenSpec (see "Spec-driven development").
 
+## Way of working
+
+How changes get made in this repo. Most of this is already practiced; it's written
+down here so it's enforceable and so a new contributor (human or agent) behaves the
+same way.
+
+- **One change per branch, one concern per PR.** Branch off `main` as `feat/…`,
+  `fix/…`, `chore/…`, `ci/…`, or `docs/…`. Don't pile unrelated work into a PR.
+- **Out-of-scope ideas become issues, not scope creep.** If a better assertion, a new
+  provider, a CI nicety, etc. surfaces mid-change, open a GitHub issue and keep the
+  current PR focused. Label it (`enhancement`, `ci`, `evals`, `governance`, …).
+- **Spec-driven for any non-trivial change — not just persona behaviour.** Tooling, CI,
+  and infra changes go through OpenSpec too (see "Spec-driven development"). Pure prose
+  polish that changes no requirement is exempt.
+- **PR-first.** Open the PR early (a proposal commit is enough), implement on the branch,
+  let CI confirm, then archive the OpenSpec change (if any) and merge.
+- **Local-first verification.** Run `./run-tests.sh` green locally before relying on CI —
+  the SLM evals are the expensive CI minutes. Say plainly what was verified locally vs.
+  what you're trusting CI to confirm.
+- **Commits & merges.** [Conventional Commits](https://www.conventionalcommits.org/) for
+  messages and PR titles; add a `Co-Authored-By:` trailer for AI-assisted commits;
+  **squash-merge**; head branches auto-delete on merge. Signed commits and the
+  enforcement of these rules are tracked in #11–#13.
+- **Report honestly.** Distinguish "verified" from "assumed"; if a check was skipped,
+  redundant, or merged-while-pending, say so and why. Don't claim a green you didn't see.
+
 ## Layout that matters
 
 - `.claude-plugin/plugin.json` — plugin manifest (name, version, description, keywords).
