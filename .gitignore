@@ -1,6 +1,9 @@
 # Packaged plugin artifact
 *.plugin
 
+# promptfoo eval HTML reports (emitted by `promptfoo eval`; uploaded as CI artifacts)
+promptfoo-report-*.html
+
 # OS cruft
 .DS_Store
 .DS_Store?

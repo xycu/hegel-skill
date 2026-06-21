@@ -138,7 +138,10 @@ over Ollama on `gemma4:e4b-it-qat`). Assertions are promptfoo contract checks
 (`icontains-any` / `icontains-all` / `not-icontains-any`, case-insensitive); the `slop:`
 footer is an advisory weight-0 metric, never a failure. The system prompt (SKILL.md +
 reference, plus a Polish language directive for weak proxy models) is assembled by
-`promptfoo/prompt.js`.
+`promptfoo/prompt.js`. Each config writes a self-contained HTML report via its
+`outputPath` (`promptfoo-report-<lang>.html`, at the repo root, gitignored); CI
+uploads it as a downloadable artifact (`promptfoo-report-<language>`), and locally
+you can open the file to inspect the full result table.
 
 Run them all from the repo root with `./run-tests.sh` (lint + EN/PL evals). It manages
 Ollama: uses a running server, starts one if installed-but-stopped and shuts that one

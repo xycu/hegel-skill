@@ -3,6 +3,11 @@
 # Model: set EVAL_MODEL (default gemma4:e4b-it-qat). Host: OLLAMA_BASE_URL.
 description: soused-hegelian EN smoke evals
 
+# Self-contained HTML report, written to CWD (repo root, both locally and in CI).
+# CI uploads it as a downloadable artifact (see skill-ci.yml); locally, open it to
+# inspect the full result table. Gitignored.
+outputPath: promptfoo-report-en.html
+
 prompts:
   - file://prompt.js
 

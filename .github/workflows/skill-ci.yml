@@ -109,3 +109,13 @@ jobs:
         env:
           EVAL_MODEL: ${{ matrix.model }}
         run: promptfoo eval -c ${{ matrix.config }} --no-cache --filter-pattern ${{ matrix.filter }} --verbose
+      # Publish the self-contained HTML report each config writes via its
+      # `outputPath`, so the full promptfoo result table is downloadable from the
+      # run's Artifacts section. `always()` captures it even when the eval fails.
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptfoo-report-${{ matrix.language }}
+          path: promptfoo-report-*.html
+          if-no-files-found: ignore
