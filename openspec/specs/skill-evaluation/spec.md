@@ -71,108 +71,117 @@ The system SHALL validate that `SKILL.md` contains frontmatter fields required f
 
 ### Requirement: Local SLM eval runner
 
-The system SHALL provide a command-line eval runner that tests the skill using a local Ollama model.
+The system SHALL evaluate the skill against a local Ollama model using
+[promptfoo](https://www.promptfoo.dev/) as the eval engine, driven by a declarative
+configuration rather than a bespoke runner.
 
-#### Scenario: Eval runner receives model and eval file
+#### Scenario: Eval configuration selects model and cases
 
-- **GIVEN** an Ollama model is available locally
-- **AND** an eval JSON file exists
-- **WHEN** the eval runner is executed with `--model` and `--evals`
-- **THEN** the runner SHALL load the specified model name
-- **AND** the runner SHALL load eval cases from the specified eval file.
+- **GIVEN** a promptfoo configuration exists
+- **AND** it references the Ollama provider model and the EN/PL eval test files
+- **WHEN** promptfoo runs the evaluation
+- **THEN** it SHALL evaluate against the configured Ollama model
+- **AND** it SHALL load the configured eval test cases.
 
-#### Scenario: Eval runner loads skill context
+#### Scenario: Eval run loads skill context
 
 - **GIVEN** `SKILL.md` exists
 - **AND** `references/hegel-reference.md` exists
-- **WHEN** the eval runner starts
+- **WHEN** promptfoo builds the prompt for a case
 - **THEN** it SHALL include the skill instructions in the system prompt
 - **AND** it SHALL include the Hegel reference material in the system prompt.
 
-#### Scenario: Eval runner calls Ollama
+#### Scenario: Eval run calls Ollama
 
 - **GIVEN** the Ollama server is running
-- **WHEN** the eval runner executes a test case
-- **THEN** it SHALL call the local Ollama chat API
+- **WHEN** promptfoo executes a test case
+- **THEN** it SHALL call the local Ollama chat API via the `ollama:chat` provider
 - **AND** it SHALL send the test prompt as the user message
 - **AND** it SHALL capture the generated assistant response.
 
 #### Scenario: Ollama is unavailable
 
 - **GIVEN** the Ollama server is not reachable
-- **WHEN** the eval runner executes
-- **THEN** the runner SHALL fail
+- **WHEN** promptfoo executes
+- **THEN** the evaluation SHALL fail
 - **AND** it SHALL return a non-zero status code.
 
 ---
 
 ### Requirement: Contract-based output assertions
 
-The system SHALL evaluate local SLM outputs using contract-based assertions rather than exact output matching.
+The system SHALL evaluate local SLM outputs using promptfoo's deterministic
+contract-based assertions rather than exact output matching. The assertion semantics
+mirror the prior custom runner: a required-any term set, a required-all term set, and a
+forbidden term set, all matched case-insensitively (the prior runner lowercased both the
+output and the terms).
 
 #### Scenario: Required-any assertion passes
 
-- **GIVEN** an eval case defines `must_include_any`
-- **AND** the model output contains at least one listed term
-- **WHEN** the eval runner evaluates the output
+- **GIVEN** an eval case defines an `icontains-any` assertion
+- **AND** the model output contains at least one listed term (case-insensitive)
+- **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL pass.
 
 #### Scenario: Required-any assertion fails
 
-- **GIVEN** an eval case defines `must_include_any`
+- **GIVEN** an eval case defines an `icontains-any` assertion
 - **AND** the model output contains none of the listed terms
-- **WHEN** the eval runner evaluates the output
+- **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL fail.
 
 #### Scenario: Required-all assertion passes
 
-- **GIVEN** an eval case defines `must_include_all`
-- **AND** the model output contains every listed term
-- **WHEN** the eval runner evaluates the output
+- **GIVEN** an eval case defines an `icontains-all` assertion
+- **AND** the model output contains every listed term (case-insensitive)
+- **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL pass.
 
 #### Scenario: Required-all assertion fails
 
-- **GIVEN** an eval case defines `must_include_all`
+- **GIVEN** an eval case defines an `icontains-all` assertion
 - **AND** the model output omits at least one listed term
-- **WHEN** the eval runner evaluates the output
+- **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL fail.
 
 #### Scenario: Forbidden-term assertion passes
 
-- **GIVEN** an eval case defines `must_not_include`
-- **AND** the model output contains none of the listed terms
-- **WHEN** the eval runner evaluates the output
+- **GIVEN** an eval case defines a `not-icontains-any` assertion
+- **AND** the model output contains none of the listed terms (case-insensitive)
+- **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL pass.
 
 #### Scenario: Forbidden-term assertion fails
 
-- **GIVEN** an eval case defines `must_not_include`
-- **AND** the model output contains at least one listed term
-- **WHEN** the eval runner evaluates the output
+- **GIVEN** an eval case defines a `not-icontains-any` assertion
+- **AND** the model output contains at least one listed term (case-insensitive)
+- **WHEN** promptfoo evaluates the output
 - **THEN** the assertion SHALL fail.
 
 ---
 
 ### Requirement: Slop footer reporting
 
-The eval runner SHALL treat the `slop:` footer as advisory: it SHALL report
-whether the footer is present, but a missing footer SHALL NOT fail the smoke
-test. The footer is a skill feature built on the stop-slop machinery and a
-multi-pass self-scoring loop, which a bare system-prompted local model (with no
-stop-slop skill installed in CI) cannot reliably perform.
+The eval suite SHALL treat the `slop:` footer as advisory: it SHALL report whether the
+footer is present, but a missing footer SHALL NOT fail the smoke test. This is
+implemented as a promptfoo `regex` assertion with `weight: 0`, so footer presence is
+tracked as a metric without affecting the case pass/fail outcome. The footer is a skill
+feature built on the stop-slop machinery and a multi-pass self-scoring loop, which a
+bare system-prompted local model (with no stop-slop skill installed in CI) cannot
+reliably perform.
 
 #### Scenario: Footer present
 
 - **GIVEN** the model output contains a `slop: N/10` footer
-- **WHEN** the eval runner evaluates the output
-- **THEN** no footer advisory is reported.
+- **WHEN** promptfoo evaluates the output
+- **THEN** the advisory assertion SHALL record the footer as present
+- **AND** the case SHALL NOT fail on the footer.
 
 #### Scenario: Footer absent
 
 - **GIVEN** the model output does not contain a `slop:` footer
-- **WHEN** the eval runner evaluates the output
-- **THEN** the runner SHALL report a footer advisory
+- **WHEN** promptfoo evaluates the output
+- **THEN** the advisory assertion SHALL record the footer as absent
 - **AND** the case SHALL NOT fail on the missing footer alone.
 
 ---
@@ -243,70 +252,70 @@ The system SHALL include Polish eval cases that verify basic behaviour of the `s
 
 ### Requirement: GitHub Actions CI integration
 
-The system SHALL run deterministic linting and local SLM smoke tests in GitHub Actions.
+The system SHALL run deterministic linting and local SLM smoke tests (executed via
+promptfoo) in GitHub Actions.
 
 #### Scenario: Pull request validation
 
 - **GIVEN** a pull request is opened
 - **WHEN** GitHub Actions runs the skill CI workflow
 - **THEN** the lint job SHALL execute
-- **AND** the local SLM smoke test job SHALL execute.
+- **AND** the promptfoo SLM smoke test job SHALL execute.
 
 #### Scenario: Push validation
 
 - **GIVEN** code is pushed to `main`
 - **WHEN** GitHub Actions runs the skill CI workflow
 - **THEN** the lint job SHALL execute
-- **AND** the local SLM smoke test job SHALL execute.
+- **AND** the promptfoo SLM smoke test job SHALL execute.
 
 #### Scenario: Manual validation
 
 - **GIVEN** a maintainer manually triggers the workflow
 - **WHEN** GitHub Actions runs the skill CI workflow
 - **THEN** the lint job SHALL execute
-- **AND** the local SLM smoke test job SHALL execute.
+- **AND** the promptfoo SLM smoke test job SHALL execute.
 
 #### Scenario: English matrix entry
 
-- **GIVEN** the local SLM smoke test job runs
+- **GIVEN** the promptfoo SLM smoke test job runs
 - **WHEN** the matrix entry language is `en`
 - **THEN** the workflow SHALL pull the configured English model
-- **AND** the workflow SHALL run `evals/hegel_skill_cases.en.json`.
+- **AND** the workflow SHALL run the English promptfoo eval test set.
 
 #### Scenario: Polish matrix entry
 
-- **GIVEN** the local SLM smoke test job runs
+- **GIVEN** the promptfoo SLM smoke test job runs
 - **WHEN** the matrix entry language is `pl`
 - **THEN** the workflow SHALL pull the configured Polish model
-- **AND** the workflow SHALL run `evals/hegel_skill_cases.pl.json`.
+- **AND** the workflow SHALL run the Polish promptfoo eval test set.
 
 ---
 
 ### Requirement: Local execution documentation
 
-The system SHALL document how to run deterministic and model-based tests locally.
+The system SHALL document how to run deterministic and model-based (promptfoo) tests
+locally.
 
 #### Scenario: Run lint locally
 
-- **GIVEN** a developer has Python dependencies installed
+- **GIVEN** a developer has Python available
 - **WHEN** the developer runs `python tools/skill_lint.py`
 - **THEN** the skill package SHALL be validated locally.
 
 #### Scenario: Run English eval locally
 
 - **GIVEN** Ollama is installed
-- **AND** `gemma3:1b` is available
-- **WHEN** the developer runs the English eval command
+- **AND** the configured eval model (`gemma4:e4b-it-qat`) is available
+- **WHEN** the developer runs the English promptfoo eval
 - **THEN** English skill smoke tests SHALL execute locally.
 
 #### Scenario: Run Polish eval locally
 
 - **GIVEN** Ollama is installed
-- **AND** `SpeakLeash/bielik-1.5b-v3.0-instruct:Q8_0` is available
-- **WHEN** the developer runs the Polish eval command
+- **AND** the configured eval model (`gemma4:e4b-it-qat`) is available
+- **WHEN** the developer runs the Polish promptfoo eval
 - **THEN** Polish skill smoke tests SHALL execute locally.
-
----
 
 ### Requirement: Manual release validation boundary
 

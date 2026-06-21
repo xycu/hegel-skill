@@ -45,4 +45,4 @@
 ## 8. Validate and finish
 
 - [x] 8.1 Run `openspec validate migrate-to-promptfoo --strict` clean.
-- [ ] 8.2 Open the PR; confirm CI (lint + promptfoo EN/PL + OpenSpec validate) is green.
+- [x] 8.2 Open the PR; confirm CI (lint + promptfoo EN/PL + OpenSpec validate) is green. → PR #7, all checks pass.
