@@ -32,10 +32,34 @@ same way.
   what you're trusting CI to confirm.
 - **Commits & merges.** [Conventional Commits](https://www.conventionalcommits.org/) for
   messages and PR titles; add a `Co-Authored-By:` trailer for AI-assisted commits;
-  **squash-merge**; head branches auto-delete on merge. Signed commits and the
-  enforcement of these rules are tracked in #11–#13.
+  **squash-merge**; head branches auto-delete on merge. All commits must be
+  **signed and verified** — see "Signed commits" below. These rules are enforced
+  (Conventional Commits #11, branch protection #13, signed commits #12).
 - **Report honestly.** Distinguish "verified" from "assumed"; if a check was skipped,
   redundant, or merged-while-pending, say so and why. Don't claim a green you didn't see.
+
+## Signed commits
+
+Every commit on **every** branch must be cryptographically signed and show GitHub's
+"Verified" badge. This is enforced two ways: a repository **ruleset** (Settings → Rules
+→ Rulesets, targeting all branches) that rejects unsigned pushes, and a CI backstop
+(`.github/workflows/signed-commits.yml`) that fails a PR if any of its commits is not
+verified via the GitHub API. Set up signing **before** you push, or the push is rejected.
+
+SSH signing is the simplest path (reuses an existing SSH key):
+
+```bash
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_ed25519.pub   # your public key
+git config --global commit.gpgsign true                     # sign every commit
+```
+
+Then add the **same** key to GitHub as a **Signing key** (Settings → SSH and GPG keys →
+New SSH key → Key type: *Signing Key*) — an Authentication key alone does not verify
+commits. GPG and S/MIME signing also work if you already use them. Using `--global`
+turns signing on everywhere so it's never forgotten per-repo. The `Co-Authored-By:`
+trailer is unaffected — signing concerns the committer, not trailers, and GitHub signs
+squash-merge commits with its own key (still "Verified").
 
 ## Layout that matters
 
