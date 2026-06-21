@@ -15,7 +15,8 @@ OpenSpec (see "Spec-driven development").
 
 How changes get made in this repo. Most of this is already practiced; it's written
 down here so it's enforceable and so a new contributor (human or agent) behaves the
-same way.
+same way. This file is the source of truth; [`CONTRIBUTING.md`](CONTRIBUTING.md) is a
+shorter human-facing entry point that summarizes the essentials and links back here.
 
 - **One change per branch, one concern per PR.** Branch off `main` as `feat/…`,
   `fix/…`, `chore/…`, `ci/…`, or `docs/…`. Don't pile unrelated work into a PR.

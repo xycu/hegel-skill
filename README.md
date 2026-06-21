@@ -23,21 +23,29 @@ hegel-skill/
 ├── .claude-plugin/
 │   ├── plugin.json                       # plugin manifest
 │   └── marketplace.json                  # marketplace manifest (for install)
+├── .claude/                              # project-scoped Claude Code config
+│   ├── commands/opsx/                    # /opsx:* OpenSpec slash commands
+│   └── skills/                           # OpenSpec propose/apply/archive workflow skills
 ├── .github/
-│   └── workflows/
-│       └── openspec.yml                  # CI: strict OpenSpec validation
+│   └── workflows/                        # CI: skill lint+evals, OpenSpec, release, commit hygiene
 ├── openspec/
-│   ├── specs/
-│   │   └── soused-hegelian-persona/
-│   │       └── spec.md                   # the persona's invariants as requirements
-│   └── changes/                          # proposed changes (one dir each)
+│   ├── specs/                            # capability specs (source of truth for behaviour)
+│   │   └── soused-hegelian-persona/      # + skill-evaluation, local-test-runner, release-pipeline
+│   │       └── spec.md
+│   └── changes/                          # proposed changes; archive/ holds the applied ones
+├── promptfoo/                            # SLM smoke evals: EN + PL configs, tests, prompt builder
 ├── skills/
 │   └── soused-hegelian/
 │       ├── SKILL.md                      # the persona: voice, engine, examples
 │       └── references/
 │           └── hegel-reference.md        # his shelf: works, glossary, real quotes
+├── tools/                                # skill_lint.py + version_check.py (deterministic guards)
 ├── assets/
 │   └── hegel.jpg                         # Schlesinger portrait, 1831 (public domain)
+├── run-tests.sh                          # one-command local lint + EN/PL evals (mirrors CI)
+├── release-please-config.json            # automated release pipeline config
+├── AGENTS.md                             # contributor/agent conventions (full source of truth)
+├── CONTRIBUTING.md                       # human-facing contributor entry point
 └── README.md
 ```
 
@@ -68,8 +76,9 @@ openspec list --specs                                        # see the capabilit
 Project-scoped `/opsx:*` slash commands (in `.claude/`) drive the propose →
 apply → archive workflow inside Claude Code.
 
-Contributors: see the "Way of working" section in [`AGENTS.md`](AGENTS.md) for the
-branch, PR, testing, and commit conventions this repo follows.
+Contributors: start with [`CONTRIBUTING.md`](CONTRIBUTING.md) for the branch, PR,
+signed-commits, and testing conventions this repo follows (it links to [`AGENTS.md`](AGENTS.md)
+for the full detail).
 
 ## Testing
 
