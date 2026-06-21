@@ -96,7 +96,9 @@ The skill is prose, but two automated layers guard against regressions (CI:
    under [`promptfoo/`](promptfoo/) (EN + PL); both default to `gemma4:e4b-it-qat`.
    CI renders each run to a self-contained HTML report and uploads it under the
    run's **Artifacts** (`promptfoo-report-<language>`), so the full result table is
-   downloadable; locally, `promptfoo view` serves the same results.
+   downloadable; locally, `promptfoo view` serves the same results. On a pull
+   request CI also posts one **sticky** comment summarizing each suite's language,
+   model, and pass/fail — it updates in place on every push instead of accumulating.
 
 These smoke evals catch obvious regressions only — they are **not** a measure of
 literary quality and **do not replace manual Claude Code testing**. Before a

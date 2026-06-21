@@ -144,7 +144,10 @@ reference, plus a Polish language directive for weak proxy models) is assembled 
 artifact (`promptfoo-report-<language>`) so the full result table is inspectable
 from GitHub; locally, `promptfoo view` serves the same results. The render uses the
 stored eval — not a re-run — because the promptfoo-action overrides a config's
-`outputPath` with its own JSON output for the PR comment.
+`outputPath` with its own JSON output. On a PR, a single **sticky** comment (one
+`aggregate-eval-comment` job, keyed by a hidden marker so it updates in place across
+pushes rather than piling up) reports every suite's language, model, and pass/fail —
+the per-job action comment is turned off (`disable-comment: true`).
 
 Run them all from the repo root with `./run-tests.sh` (lint + EN/PL evals). It manages
 Ollama: uses a running server, starts one if installed-but-stopped and shuts that one
