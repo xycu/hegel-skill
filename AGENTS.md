@@ -175,10 +175,9 @@ type is derived from the Conventional Commit type of each squash subject (`fix:`
   protection requires **no status checks** — the checks still run and stay visible on PRs
   and on push-to-`main`, just non-blocking; the release PR is gated by required review plus
   the signing ruleset. The `release.yml` job is self-contained for the same reason.
-- **Bootstrap (one-time).** `release-please-config.json` carries `"release-as": "1.0.0"` so
-  the first pipeline release reconciles the stale `0.1.0` to a stable `1.0.0` baseline.
-  **Remove that key once `v1.0.0` is published** — left in, it would pin every subsequent
-  release to `1.0.0`.
+- **Baseline.** The pipeline's first release reconciled the stale `0.1.0` to a stable
+  `1.0.0` (via a one-time `release-as` bootstrap, since removed); every release after it
+  derives its version from the Conventional Commit history, as above.
 
 ## Spec-driven development (OpenSpec)
 
