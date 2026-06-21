@@ -5,7 +5,6 @@
       "release-type": "simple",
       "package-name": "hegel-skill",
       "include-component-in-tag": false,
-      "release-as": "1.0.0",
       "extra-files": [
         { "type": "json", "path": ".claude-plugin/plugin.json", "jsonpath": "$.version" },
         { "type": "json", "path": ".claude-plugin/marketplace.json", "jsonpath": "$..version" }
