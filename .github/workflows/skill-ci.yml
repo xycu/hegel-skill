@@ -46,18 +46,21 @@ jobs:
     continue-on-error: ${{ matrix.canary == true }}
     permissions:
       contents: read
-      pull-requests: write  # promptfoo-action posts a results comment on PRs
+      pull-requests: read  # read PR file list for the eval; the single sticky
+                           # results comment is posted by the aggregate job
     strategy:
       fail-fast: false
       matrix:
         include:
           # Behavioural gates: gemma4:e4b-it-qat handles EN and PL 4/4.
           - language: en
+            display: English
             model: gemma4:e4b-it-qat
             config: promptfoo/promptfooconfig.en.yaml
             filter: ""
             canary: false
           - language: pl
+            display: Polish
             model: gemma4:e4b-it-qat
             config: promptfoo/promptfooconfig.pl.yaml
             filter: ""
@@ -66,6 +69,7 @@ jobs:
           # (Bielik-7B). Non-blocking. PLLuM was dropped — too terse / breaks
           # character at both 4B and 8B.
           - language: pl-canary-bielik7b
+            display: Polish (Bielik-7B)
             model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
             config: promptfoo/promptfooconfig.pl.yaml
             filter: pl-dialectical
@@ -88,10 +92,12 @@ jobs:
           done
       - name: Pull model
         run: ollama pull ${{ matrix.model }}
-      # Behavioural gates (en/pl): run the eval AND post a results comment on the PR.
-      # fail-on-threshold 100 keeps it a hard gate — all cases must pass. EVAL_MODEL
-      # feeds the promptfoo provider id; OLLAMA_BASE_URL defaults to the local server.
-      - name: Run evals + PR comment
+      # Behavioural gates (en/pl): run the eval as a hard gate (fail-on-threshold
+      # 100 — all cases must pass). EVAL_MODEL feeds the promptfoo provider id;
+      # OLLAMA_BASE_URL defaults to the local server. disable-comment drops the
+      # action's per-job PR comment (and its spurious "LLM prompt was modified"
+      # line) — the single sticky EN+PL summary is built by the aggregate job below.
+      - name: Run evals (behavioural gate)
         if: ${{ matrix.canary != true }}
         uses: promptfoo/promptfoo-action@v1
         env:
@@ -105,6 +111,7 @@ jobs:
           no-cache: true
           force-run: true
           fail-on-threshold: 100
+          disable-comment: true
       # Canary: filtered single case on a third-party model; non-blocking, no comment.
       - name: Run canary eval
         if: ${{ matrix.canary == true }}
@@ -128,3 +135,106 @@ jobs:
           name: promptfoo-report-${{ matrix.language }}
           path: promptfoo-report-${{ matrix.language }}.html
           if-no-files-found: warn
+      # Extract a compact pass/fail summary from the same stored eval so the
+      # aggregate job can assemble one combined PR comment. `always()` so a failed
+      # gate still reports its counts. successes/failures/errors are promptfoo's
+      # per-test-case counts; total is their sum.
+      - name: Summarize result
+        if: always()
+        env:
+          DISPLAY: ${{ matrix.display }}
+          MODEL: ${{ matrix.model }}
+          BLOCKING: ${{ matrix.canary != true }}
+        run: |
+          if promptfoo export eval latest -o eval.json 2>/dev/null; then
+            passes=$(jq '.results.stats.successes // 0' eval.json)
+            failures=$(jq '.results.stats.failures // 0' eval.json)
+            errors=$(jq '.results.stats.errors // 0' eval.json)
+          else
+            passes=0; failures=0; errors=0
+          fi
+          total=$((passes + failures + errors))
+          jq -n \
+            --arg label "$DISPLAY" --arg model "$MODEL" \
+            --argjson passes "$passes" --argjson failures "$failures" \
+            --argjson errors "$errors" --argjson total "$total" \
+            --argjson blocking "$BLOCKING" \
+            '{label:$label, model:$model, passes:$passes, failures:$failures, errors:$errors, total:$total, blocking:$blocking}' \
+            | tee "summary-${{ matrix.language }}.json"
+      - name: Upload result summary
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: eval-summary-${{ matrix.language }}
+          path: summary-${{ matrix.language }}.json
+          if-no-files-found: warn
+
+  # Aggregate every matrix entry's summary into ONE sticky PR comment that updates
+  # in place across pushes (keyed by a hidden marker), so comments never pile up.
+  # `always()` so it still reports when a gate fails; PR-only since it comments.
+  aggregate-eval-comment:
+    name: Eval results comment
+    runs-on: ubuntu-latest
+    needs: local-slm-smoke
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+      pull-requests: write  # post / update the single sticky results comment
+    steps:
+      - name: Download result summaries
+        # Tolerate zero matches (e.g. every smoke leg died before uploading) so the
+        # next step can still render the "no summaries" fallback comment.
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          pattern: eval-summary-*
+          merge-multiple: true
+          path: summaries
+      - name: Build and post sticky comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          marker='<!-- skill-ci-eval-results -->'
+          shopt -s nullglob
+          files=(summaries/*.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            table="_No eval summaries were produced — the smoke jobs likely failed before running. See the [workflow run]($RUN_URL)._"
+            overall='⚠️ unknown'
+          else
+            arr=$(jq -s 'sort_by([(.blocking | not), .label])' "${files[@]}")
+            rows=$(jq -r '
+              def passed: .total > 0 and .failures == 0 and .errors == 0;
+              .[] |
+              (if passed then "✅ pass" else "❌ fail" end) as $res |
+              (if .blocking then "" else " · _non-blocking canary_" end) as $tag |
+              (if .errors > 0 then " (\(.errors) err)" else "" end) as $err |
+              "| \(.label)\($tag) | `\(.model)` | \($res) | \(.passes)/\(.total)\($err) |"
+            ' <<<"$arr")
+            table=$(printf '| Suite | Model | Result | Cases |\n|---|---|---|---|\n%s' "$rows")
+            if jq -e 'def passed: .total > 0 and .failures == 0 and .errors == 0;
+                      all(.[]; (.blocking | not) or passed)' <<<"$arr" >/dev/null; then
+              overall='✅ pass'
+            else
+              overall='❌ fail'
+            fi
+          fi
+          body=$(printf '%s\n### 🧪 SLM smoke evals\n\nThe skill run against local models via Ollama (promptfoo). Behavioural **gates** must pass every case (100%%); **canaries** are third-party-model compatibility checks and never block.\n\n%s\n\n**Gate status: %s** — commit `%s`. Per-language HTML reports and full logs are in the [workflow run](%s) → Artifacts.\n' \
+            "$marker" "$table" "$overall" "${HEAD_SHA:0:7}" "$RUN_URL")
+          # Find a prior sticky comment by its hidden marker. Capture the full API
+          # result first, then pick the first id — piping --paginate straight into
+          # head would SIGPIPE the API call and trip `pipefail`.
+          ids=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.body | contains(\"$marker\")) | .id")
+          existing=$(printf '%s\n' "$ids" | head -n1)
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing" -f body="$body" >/dev/null
+            echo "Updated sticky comment $existing"
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="$body" >/dev/null
+            echo "Created sticky comment"
+          fi
