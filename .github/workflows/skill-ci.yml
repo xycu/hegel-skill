@@ -42,6 +42,9 @@ jobs:
     # Canary jobs are informational compatibility checks: report pass/fail but
     # never block the build (their models are third-party and may drift).
     continue-on-error: ${{ matrix.canary == true }}
+    permissions:
+      contents: read
+      pull-requests: write  # promptfoo-action posts a results comment on PRs
     strategy:
       fail-fast: false
       matrix:
@@ -83,13 +86,26 @@ jobs:
           done
       - name: Pull model
         run: ollama pull ${{ matrix.model }}
-      - name: Run evals
-        # EVAL_MODEL feeds the promptfoo provider id; OLLAMA_BASE_URL defaults to
-        # the local server. Canaries log full output (--verbose) and filter to one case.
+      # Behavioural gates (en/pl): run the eval AND post a results comment on the PR.
+      # fail-on-threshold 100 keeps it a hard gate — all cases must pass. EVAL_MODEL
+      # feeds the promptfoo provider id; OLLAMA_BASE_URL defaults to the local server.
+      - name: Run evals + PR comment
+        if: ${{ matrix.canary != true }}
+        uses: promptfoo/promptfoo-action@v1
         env:
           EVAL_MODEL: ${{ matrix.model }}
-        run: |
-          ARGS=""
-          [ -n "${{ matrix.filter }}" ] && ARGS="--filter-pattern ${{ matrix.filter }}"
-          [ "${{ matrix.canary }}" = "true" ] && ARGS="$ARGS --verbose"
-          promptfoo eval -c ${{ matrix.config }} --no-cache $ARGS
+        with:
+          config: ${{ matrix.config }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          promptfoo-version: ${{ env.PROMPTFOO_VERSION }}
+          use-config-prompts: true
+          no-share: true
+          no-cache: true
+          force-run: true
+          fail-on-threshold: 100
+      # Canary: filtered single case on a third-party model; non-blocking, no comment.
+      - name: Run canary eval
+        if: ${{ matrix.canary == true }}
+        env:
+          EVAL_MODEL: ${{ matrix.model }}
+        run: promptfoo eval -c ${{ matrix.config }} --no-cache --filter-pattern ${{ matrix.filter }} --verbose
