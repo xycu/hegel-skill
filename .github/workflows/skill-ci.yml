@@ -69,7 +69,7 @@ jobs:
           # (Bielik-7B). Non-blocking. PLLuM was dropped — too terse / breaks
           # character at both 4B and 8B.
           - language: pl-canary-bielik7b
-            display: Polish (Bielik-7B)
+            display: Polish (canary)
             model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
             config: promptfoo/promptfooconfig.pl.yaml
             filter: pl-dialectical
@@ -207,13 +207,14 @@ jobs:
             overall='⚠️ unknown'
           else
             arr=$(jq -s 'sort_by([(.blocking | not), .label])' "${files[@]}")
+            # Model column shows just the model name, not its full hf.co/org/ path.
             rows=$(jq -r '
               def passed: .total > 0 and .failures == 0 and .errors == 0;
               .[] |
               (if passed then "✅ pass" else "❌ fail" end) as $res |
-              (if .blocking then "" else " · _non-blocking canary_" end) as $tag |
+              (.model | split("/") | last) as $model |
               (if .errors > 0 then " (\(.errors) err)" else "" end) as $err |
-              "| \(.label)\($tag) | `\(.model)` | \($res) | \(.passes)/\(.total)\($err) |"
+              "| \(.label) | `\($model)` | \($res) | \(.passes)/\(.total)\($err) |"
             ' <<<"$arr")
             table=$(printf '| Suite | Model | Result | Cases |\n|---|---|---|---|\n%s' "$rows")
             if jq -e 'def passed: .total > 0 and .failures == 0 and .errors == 0;
