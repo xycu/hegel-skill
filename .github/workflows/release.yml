@@ -1,0 +1,37 @@
+name: Release
+
+# release-please in its release-PR model: on every push to main it maintains a
+# standing release PR that accumulates changes. Merging that PR performs the version
+# bump (all three fields via release-please-config.json `extra-files`), the git tag,
+# and a GitHub Release with a generated changelog — through the normal reviewed flow,
+# never bypassing branch protection (#13).
+#
+# Auth: the default GITHUB_TOKEN. release-please creates its commits/merge/tag via the
+# GitHub API, which GitHub signs with its web-flow key (shows "Verified"), satisfying
+# the all-branches signed-commits ruleset (#12) with no GitHub App. Caveat: events
+# authored by GITHUB_TOKEN do not trigger other workflows, so the release PR will not
+# auto-run skill-ci / the version-drift check, and the tag push triggers nothing — by
+# design, this job is self-contained and required status checks must not be configured
+# to demand a workflow-triggered check on the bot release PR (see AGENTS.md "Releases").
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Maintain release PR / publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

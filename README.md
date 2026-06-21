@@ -143,6 +143,28 @@ Once installed, summon him by asking to speak with the "drunk Hegelian," "Doktor
 Brandt," or simply by asking that a question be answered dialectically in his voice.
 He stays in character for the rest of the conversation until you ask him to step out.
 
+## Releases
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please)
+in its release-PR model. Every push to `main` updates a standing **release PR** that
+accumulates the pending changes; merging that PR bumps the version, tags it, and publishes
+a [GitHub Release](https://github.com/xycu/hegel-skill/releases) with a generated changelog
+— all through the normal reviewed flow, so protected `main` is never bypassed.
+
+- **Version source of truth.** The same version lives in three fields — `version` in
+  `.claude-plugin/plugin.json`, and `metadata.version` plus `plugins[0].version` in
+  `.claude-plugin/marketplace.json`. release-please updates all three together; a CI
+  guard (`tools/version_check.py`) fails the build if they ever drift apart. The
+  marketplace version is how an installed plugin detects that a newer release exists.
+- **Bump type comes from your commits.** The PR title (the squash subject on `main`) is a
+  [Conventional Commit](https://www.conventionalcommits.org/): `fix:` → patch, `feat:` →
+  minor, and a `!` / `BREAKING CHANGE:` → major.
+- **Signing.** The automation runs as the default `GITHUB_TOKEN` bot; its commits and tags
+  are created through the GitHub API, which signs them so they show as "Verified" and
+  satisfy the all-branches signed-commits rule. (Caveat: `GITHUB_TOKEN`-authored PRs do not
+  trigger other workflows, so `main` requires no blocking status checks — they still run and
+  show on PRs, and the release PR is gated by required review plus the signing rule instead.)
+
 ## Customizing
 
 - **Rename him.** The name and the Jena backstory are flavour; the voice and the

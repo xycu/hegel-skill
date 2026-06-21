@@ -33,6 +33,8 @@ jobs:
           python-version: "3.12"
       - name: Lint skill package
         run: python tools/skill_lint.py
+      - name: Check version fields are in lockstep
+        run: python tools/version_check.py
 
   local-slm-smoke:
     name: Local SLM smoke (${{ matrix.language }})
