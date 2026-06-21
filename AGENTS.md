@@ -152,6 +152,32 @@ install if present, else a pinned `npx`. Iterate locally before pushing — the 
 are the expensive CI minutes. These smoke evals catch obvious regressions only; they do
 **not** replace manual Claude Code validation before a release.
 
+## Releases
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please)
+in the release-PR model (`.github/workflows/release.yml`, `release-please-config.json`,
+`.release-please-manifest.json`). Every push to `main` updates a standing **release PR**;
+merging it bumps the version, tags it, and publishes a GitHub Release with a generated
+changelog — through the reviewed flow, never bypassing protected `main` (#13). The bump
+type is derived from the Conventional Commit type of each squash subject (`fix:` → patch,
+`feat:` → minor, `!`/`BREAKING CHANGE:` → major).
+
+- **Three version fields, one value.** `version` (`.claude-plugin/plugin.json`) and both
+  `metadata.version` and `plugins[0].version` (`.claude-plugin/marketplace.json`) must
+  always match. release-please updates all three via `extra-files` (a single `$..version`
+  jsonpath covers both marketplace fields); `tools/version_check.py` is the independent
+  drift guard wired into the `skill-ci` lint job — it fails CI if they diverge.
+- **Signing.** The automation uses the default `GITHUB_TOKEN`; its commits/merge/tag are
+  API-created, so GitHub web-flow-signs them as "Verified" and the #12 ruleset is satisfied
+  with no GitHub App. **Caveat:** `GITHUB_TOKEN`-authored events don't trigger other
+  workflows, so the release PR won't auto-run `skill-ci`/drift even though it edits
+  `.claude-plugin/**`; required status checks must stay on the feature PRs, not the bot's
+  release PR, or it deadlocks. The `release.yml` job is self-contained for this reason.
+- **Bootstrap (one-time).** `release-please-config.json` carries `"release-as": "1.0.0"` so
+  the first pipeline release reconciles the stale `0.1.0` to a stable `1.0.0` baseline.
+  **Remove that key once `v1.0.0` is published** — left in, it would pin every subsequent
+  release to `1.0.0`.
+
 ## Spec-driven development (OpenSpec)
 
 The invariants above are also encoded as machine-checkable requirements in
