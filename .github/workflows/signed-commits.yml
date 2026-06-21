@@ -1,0 +1,39 @@
+name: Signed commits
+
+# Defense-in-depth backstop for the "Require signed commits" repository ruleset
+# (Settings → Rules → Rulesets, targeting all branches). The ruleset blocks the
+# push itself; this check makes the same requirement visible on the PR and covers
+# the case where the ruleset is ever disabled or misconfigured.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify-signatures:
+    name: Verify every commit is signed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check commit signatures
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # GitHub exposes verification.verified per commit — the same flag behind
+          # the "Verified" badge. Fail if any commit in the PR isn't verified.
+          unverified=$(gh api --paginate "repos/$REPO/pulls/$PR/commits" \
+            --jq '.[] | select(.commit.verification.verified == false)
+                      | "  \(.sha[0:7]) \(.commit.message | split("\n")[0]) — \(.commit.verification.reason)"')
+          if [ -n "$unverified" ]; then
+            echo "::error::Unsigned or unverified commits found in this PR:"
+            echo "$unverified"
+            echo ""
+            echo 'Every commit must be signed and show GitHub'\''s "Verified" badge.'
+            echo 'See AGENTS.md → "Signed commits" for the SSH signing setup.'
+            exit 1
+          fi
+          echo "All commits in this PR are signed and verified. ✓"
