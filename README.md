@@ -162,8 +162,8 @@ a [GitHub Release](https://github.com/xycu/hegel-skill/releases) with a generate
 - **Signing.** The automation runs as the default `GITHUB_TOKEN` bot; its commits and tags
   are created through the GitHub API, which signs them so they show as "Verified" and
   satisfy the all-branches signed-commits rule. (Caveat: `GITHUB_TOKEN`-authored PRs do not
-  trigger other workflows, so required status checks are kept on the feature PRs, not the
-  bot's release PR.)
+  trigger other workflows, so `main` requires no blocking status checks — they still run and
+  show on PRs, and the release PR is gated by required review plus the signing rule instead.)
 
 ## Customizing
 

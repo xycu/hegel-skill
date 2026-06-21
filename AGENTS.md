@@ -171,8 +171,10 @@ type is derived from the Conventional Commit type of each squash subject (`fix:`
   API-created, so GitHub web-flow-signs them as "Verified" and the #12 ruleset is satisfied
   with no GitHub App. **Caveat:** `GITHUB_TOKEN`-authored events don't trigger other
   workflows, so the release PR won't auto-run `skill-ci`/drift even though it edits
-  `.claude-plugin/**`; required status checks must stay on the feature PRs, not the bot's
-  release PR, or it deadlocks. The `release.yml` job is self-contained for this reason.
+  `.claude-plugin/**`. To stop that from deadlocking the bot's release PR, `main`'s branch
+  protection requires **no status checks** — the checks still run and stay visible on PRs
+  and on push-to-`main`, just non-blocking; the release PR is gated by required review plus
+  the signing ruleset. The `release.yml` job is self-contained for the same reason.
 - **Bootstrap (one-time).** `release-please-config.json` carries `"release-as": "1.0.0"` so
   the first pipeline release reconciles the stale `0.1.0` to a stable `1.0.0` baseline.
   **Remove that key once `v1.0.0` is published** — left in, it would pin every subsequent
