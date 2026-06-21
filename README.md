@@ -68,8 +68,9 @@ openspec list --specs                                        # see the capabilit
 Project-scoped `/opsx:*` slash commands (in `.claude/`) drive the propose →
 apply → archive workflow inside Claude Code.
 
-Contributors: see the "Way of working" section in [`AGENTS.md`](AGENTS.md) for the
-branch, PR, testing, and commit conventions this repo follows.
+Contributors: start with [`CONTRIBUTING.md`](CONTRIBUTING.md) for the branch, PR,
+signed-commits, and testing conventions this repo follows (it links to [`AGENTS.md`](AGENTS.md)
+for the full detail).
 
 ## Testing
 
