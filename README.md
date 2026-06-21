@@ -85,9 +85,9 @@ The skill is prose, but two automated layers guard against regressions (CI:
    shallow, contract-based markers (`icontains-any` / `icontains-all` /
    `not-icontains-any`) plus an advisory `slop:` footer metric. The configs live
    under [`promptfoo/`](promptfoo/) (EN + PL); both default to `gemma4:e4b-it-qat`.
-   Each run writes a self-contained HTML report (`promptfoo-report-<lang>.html`);
-   CI uploads it under the run's **Artifacts** so the full result table is
-   downloadable, and locally you can just open the file.
+   CI renders each run to a self-contained HTML report and uploads it under the
+   run's **Artifacts** (`promptfoo-report-<language>`), so the full result table is
+   downloadable; locally, `promptfoo view` serves the same results.
 
 These smoke evals catch obvious regressions only — they are **not** a measure of
 literary quality and **do not replace manual Claude Code testing**. Before a

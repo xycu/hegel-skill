@@ -109,13 +109,20 @@ jobs:
         env:
           EVAL_MODEL: ${{ matrix.model }}
         run: promptfoo eval -c ${{ matrix.config }} --no-cache --filter-pattern ${{ matrix.filter }} --verbose
-      # Publish the self-contained HTML report each config writes via its
-      # `outputPath`, so the full promptfoo result table is downloadable from the
-      # run's Artifacts section. `always()` captures it even when the eval fails.
+      # Render the just-run eval to a self-contained HTML report from promptfoo's
+      # local store. This works for both job kinds: the promptfoo-action overrides
+      # the config's outputPath with its own JSON (for the PR comment), so we can't
+      # rely on outputPath — `export eval latest` re-renders the stored result
+      # without a second model run. `always()` so a failed eval still produces it.
+      - name: Render HTML report
+        if: always()
+        run: promptfoo export eval latest -o promptfoo-report-${{ matrix.language }}.html
+      # Publish it so the full result table is downloadable from the run's Artifacts
+      # section. `warn` (not ignore) keeps a missing report visible in the log.
       - name: Upload eval report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: promptfoo-report-${{ matrix.language }}
-          path: promptfoo-report-*.html
-          if-no-files-found: ignore
+          path: promptfoo-report-${{ matrix.language }}.html
+          if-no-files-found: warn
