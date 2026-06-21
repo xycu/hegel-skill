@@ -1,0 +1,33 @@
+name: Conventional Commits
+
+# Validate the PR title against the Conventional Commits spec. Because the repo
+# squash-merges, the PR title becomes the commit subject on `main`, so checking
+# the title is what enforces conventional commits in history.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  pr-title:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Allowed types. Scope is optional and unrestricted (any scope is fine).
+          types: |
+            feat
+            fix
+            docs
+            chore
+            ci
+            refactor
+            perf
+            test
+            build
+            revert
