@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/xycu/hegel-skill/compare/v1.3.0...v1.4.0) (2026-06-22)
+
+
+### Features
+
+* **evals:** advisory embedding-similarity (similar) asserts ([#32](https://github.com/xycu/hegel-skill/issues/32)) ([#74](https://github.com/xycu/hegel-skill/issues/74)) ([967ac78](https://github.com/xycu/hegel-skill/commit/967ac783fb9a2591162e9de0f5158b361a910a47))
+
 ## [1.3.0](https://github.com/xycu/hegel-skill/compare/v1.2.0...v1.3.0) (2026-06-22)
 
 
