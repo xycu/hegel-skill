@@ -20,6 +20,18 @@ providers:
 defaultTest:
   vars:
     lang: en
+  # Grader for model-graded asserts (llm-rubric) — the local Ollama judge chosen
+  # in #30: zero secrets, zero API cost, self-contained. Greedy (temperature 0)
+  # so judging is stable even though generation stays creative (0.7). GRADER_MODEL
+  # overrides the judge independently of the model under test (EVAL_MODEL).
+  options:
+    provider:
+      id: 'ollama:chat:{{ env.GRADER_MODEL | default("gemma4:e4b-it-qat") }}'
+      config:
+        num_ctx: 8192
+        num_predict: 512
+        temperature: 0
+        seed: 7
   assert:
     # The slop footer is advisory: a bare system-prompted local model (no
     # stop-slop skill) usually can't perform the self-scoring loop. weight 0 =
@@ -38,6 +50,37 @@ defaultTest:
       value: file://asserts/response-shape.js
       weight: 0
       metric: response_shape
+    # Semantic llm-rubric quality grading (#31), EN. Advisory (weight 0): graded
+    # by the local Ollama judge, recorded as metrics, never fails a case yet —
+    # promotable to thresholded per the gating policy once trustworthy. Grades
+    # meaning, so it tolerates the high-temperature phrasing variance that made
+    # keyword lists flaky.
+    - type: llm-rubric
+      value: >-
+        The reply speaks in the voice of Wilhelm Brandt — a dissipated, erudite
+        19th-century Hegelian: elevated and periodic diction, a melancholy-decadent
+        mood, cynical but never cruel. It must NOT read as a flat corporate
+        assistant, a bulleted how-to, or sterile boilerplate. Pass if the register
+        is recognisably this elevated literary persona.
+      weight: 0
+      metric: voice_rubric
+    - type: llm-rubric
+      value: >-
+        The reply performs the dialectical engine rather than naming it: it lets a
+        fixed notion run into its own determinate negation and then sublates the
+        opposition into a richer unity. Pass if this movement is enacted in the
+        prose. Fail only if it merely announces scaffolding (labelling
+        "thesis/antithesis/synthesis", "step 1/2/3") or never moves at all.
+      weight: 0
+      metric: dialectic_rubric
+    - type: llm-rubric
+      value: >-
+        Citation fidelity: if the reply names specific works by Hegel or quotes
+        him, those works must be real and the quotes must not be fabricated. Pass
+        if all references are accurate, OR if the reply makes no specific citation
+        at all. Fail only on invented works or fabricated quotations.
+      weight: 0
+      metric: citation_rubric
 
 # One file per persona behaviour under tests/; the glob picks up every EN
 # behaviour file, so new behaviours (e.g. coverage/robustness work) are
