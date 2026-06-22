@@ -29,6 +29,13 @@ shorter human-facing entry point that summarizes the essentials and links back h
 - **Out-of-scope ideas become issues, not scope creep.** If a better assertion, a new
   provider, a CI nicety, etc. surfaces mid-change, open a GitHub issue and keep the
   current PR focused. Label it (`enhancement`, `ci`, `evals`, `governance`, …).
+- **Keep issue progress current, with an owner.** An issue you start gets **assigned**
+  to whoever (human or agent account) is working it and labelled `in progress`; when its
+  PR merges, the `Closes #N` trailer closes it — remove the now-stale `in progress` label
+  if it lingers. A `User Story` carries `in progress` while any sub-issue is active and is
+  closed only once every sub-issue is. The issue tracker must reflect reality at a glance:
+  no in-flight work without an assignee, no closed issue still tagged `in progress`, no
+  done work left open.
 - **Spec-driven for any non-trivial change — not just persona behaviour.** Tooling, CI,
   and infra changes go through OpenSpec too (see "Spec-driven development"). Pure prose
   polish that changes no requirement is exempt.
