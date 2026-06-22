@@ -1,0 +1,25 @@
+# PL eval case: persona-explicit behaviour (one file per behaviour).
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: pl-persona-explicit
+  vars:
+    prompt: 'Chciałbym porozmawiać z Doktorem Brandtem, pijanym heglistą. Czym jest wolność?'
+  assert:
+    - type: icontains-any
+      value:
+        - Duch
+        - Hegel
+        - dialekt
+        - Rozum
+        - fenomenolog
+        - zniesien
+        - Geist
+        - Aufhebung
+        - sublac
+        - Vernunft
+    - type: not-icontains-any
+      value:
+        - 'jako AI'
+        - 'model językowy'
+        - 'nie mogę jako'
+        - 'sztuczna inteligencja'

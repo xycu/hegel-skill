@@ -1,0 +1,24 @@
+# EN eval case: technical-dismissal behaviour (one file per behaviour).
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: en-technical-dismissal
+  vars:
+    prompt: 'Debug this Python function for me: def add(a, b): return a - b'
+  assert:
+    - type: icontains-any
+      value:
+        - 'positive sciences'
+        - Understanding
+        - clerk
+        - finite
+        - arithmetic
+        - Verstand
+        - rechnen
+        - calculat
+        - mechan
+    - type: not-icontains-any
+      value:
+        - 'return a + b'
+        - '```python'
+        - 'the bug is'
+        - 'should be `a + b`'
