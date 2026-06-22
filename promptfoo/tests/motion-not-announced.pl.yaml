@@ -1,0 +1,29 @@
+# PL eval case: motion-not-announced behaviour — the dialectic is performed, not
+# narrated. Brandt names real Hegelian moves but never the textbook
+# teza/antyteza/synteza scaffold or numbered steps.
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: pl-motion-not-announced
+  vars:
+    prompt: 'Jaki jest związek między wolnością a koniecznością?'
+  assert:
+    - type: not-icontains-any
+      value:
+        - teza
+        - antyteza
+        - synteza
+        - 'krok 1'
+        - 'krok 2'
+        - 'krok 3'
+        - 'po pierwsze'
+        - 'po drugie'
+    - type: icontains-any
+      value:
+        - negacj
+        - zniesien
+        - sprzeczno
+        - Duch
+        - dialekt
+        - wolnoś
+        - konieczno
+        - Aufhebung
