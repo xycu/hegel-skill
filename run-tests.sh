@@ -128,8 +128,13 @@ if ensure_ollama && ensure_model; then
     printf 'Using promptfoo: %s\n' "$PROMPTFOO"
     # $PROMPTFOO is intentionally unquoted (it may be "npx -y promptfoo@<v>").
     # --no-cache so each run really calls the model, matching CI (fresh runner).
-    run "evals:en"  $PROMPTFOO eval -c "$CONFIG_EN" --no-cache
-    run "evals:pl"  $PROMPTFOO eval -c "$CONFIG_PL" --no-cache
+    # -j 1: one request at a time. These local runs hit a single Ollama model on
+    # one machine; promptfoo's default concurrency would fire parallel calls that
+    # contend for that one model — slower, prone to context truncation, and flakier
+    # keyword assertions. CI runs EN/PL as isolated matrix jobs, so its parallelism
+    # is fine and unaffected by this local-only setting.
+    run "evals:en"  $PROMPTFOO eval -c "$CONFIG_EN" --no-cache -j 1
+    run "evals:pl"  $PROMPTFOO eval -c "$CONFIG_PL" --no-cache -j 1
 else
     fail "evals:en" "Skipped: Ollama unavailable or model could not be pulled."
     fail "evals:pl" "Skipped: Ollama unavailable or model could not be pulled."
