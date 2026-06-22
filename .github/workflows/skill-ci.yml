@@ -85,33 +85,33 @@ jobs:
         run: curl -fsSL https://ollama.com/install.sh | sh
       - name: Start Ollama server
         run: |
-          ollama serve &
+          # The install step may already have started a server; only launch one
+          # if the port is free, else `ollama serve` logs "address already in use".
+          if ! curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
+            ollama serve &
+          fi
           for i in $(seq 1 30); do
             curl -sf http://localhost:11434/api/tags >/dev/null && break
             sleep 1
           done
       - name: Pull model
         run: ollama pull ${{ matrix.model }}
-      # Behavioural gates (en/pl): run the eval as a hard gate (fail-on-threshold
-      # 100 — all cases must pass). EVAL_MODEL feeds the promptfoo provider id;
-      # OLLAMA_BASE_URL defaults to the local server. disable-comment drops the
-      # action's per-job PR comment (and its spurious "LLM prompt was modified"
-      # line) — the single sticky EN+PL summary is built by the aggregate job below.
+      # Behavioural gate (en/pl): run promptfoo directly (like the canary below)
+      # rather than via promptfoo-action. The action runs at concurrency 4, but a
+      # single CPU-bound Ollama serves the whole job, so parallel 1600-token
+      # generations starve each other and a call can exceed the request timeout
+      # and error (failing the 100% gate). `-j 1` serves one request at a time —
+      # each call is fast — mirroring the local runner (#47); REQUEST_TIMEOUT_MS
+      # raises the per-call timeout (default 300s) as margin. `promptfoo eval`
+      # exits non-zero on any non-pass, so this stays a hard 100% gate. The HTML
+      # report and the sticky-comment summary read from promptfoo's local store
+      # (`export eval latest`), so dropping the action does not affect them.
       - name: Run evals (behavioural gate)
         if: ${{ matrix.canary != true }}
-        uses: promptfoo/promptfoo-action@v1
         env:
           EVAL_MODEL: ${{ matrix.model }}
-        with:
-          config: ${{ matrix.config }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          promptfoo-version: ${{ env.PROMPTFOO_VERSION }}
-          use-config-prompts: true
-          no-share: true
-          no-cache: true
-          force-run: true
-          fail-on-threshold: 100
-          disable-comment: true
+          REQUEST_TIMEOUT_MS: "600000"
+        run: promptfoo eval -c ${{ matrix.config }} --no-cache -j 1
       # Canary: filtered single case on a third-party model; non-blocking, no comment.
       - name: Run canary eval
         if: ${{ matrix.canary == true }}
@@ -119,10 +119,9 @@ jobs:
           EVAL_MODEL: ${{ matrix.model }}
         run: promptfoo eval -c ${{ matrix.config }} --no-cache --filter-pattern ${{ matrix.filter }} --verbose
       # Render the just-run eval to a self-contained HTML report from promptfoo's
-      # local store. This works for both job kinds: the promptfoo-action overrides
-      # the config's outputPath with its own JSON (for the PR comment), so we can't
-      # rely on outputPath — `export eval latest` re-renders the stored result
-      # without a second model run. `always()` so a failed eval still produces it.
+      # local store. `export eval latest` re-renders the stored result without a
+      # second model run, so it works for every job kind regardless of how the
+      # eval was invoked. `always()` so a failed eval still produces it.
       - name: Render HTML report
         if: always()
         run: promptfoo export eval latest -o promptfoo-report-${{ matrix.language }}.html
