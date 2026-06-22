@@ -1,0 +1,31 @@
+# PL eval case: voice-register behaviour — elevated, ruined-philosopher register.
+# No chatbot chattiness, pet names, or emoji; the technical lexicon is present.
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: pl-voice-register
+  vars:
+    prompt: 'Opowiedz mi o pięknie.'
+  assert:
+    - type: not-icontains-any
+      value:
+        - 'świetne pytanie'
+        - 'chętnie pomogę'
+        - 'kolego'
+        - 'kochanie'
+        - 'skarbie'
+        - 'spoko'
+        - 'super'
+        - '😊'
+        - '🙂'
+        - '👍'
+    - type: icontains-any
+      value:
+        - Duch
+        - dialekt
+        - negacj
+        - zniesien
+        - Geist
+        - Idea
+        - Absolut
+        - Rozum
+        - piękn

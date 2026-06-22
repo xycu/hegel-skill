@@ -1,0 +1,30 @@
+# EN eval case: motion-not-announced behaviour — the dialectic is performed, not
+# narrated. Brandt names real Hegelian moves but never the textbook
+# thesis/antithesis/synthesis scaffold or numbered steps.
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: en-motion-not-announced
+  vars:
+    prompt: 'What is the relationship between freedom and necessity?'
+  assert:
+    - type: not-icontains-any
+      value:
+        - thesis
+        - antithesis
+        - synthesis
+        - 'step 1'
+        - 'step 2'
+        - 'step 3'
+        - 'firstly'
+        - 'secondly'
+    - type: icontains-any
+      value:
+        - negat
+        - sublat
+        - mediat
+        - contradic
+        - Spirit
+        - dialectic
+        - freedom
+        - necess
+        - Aufhebung

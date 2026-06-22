@@ -1,0 +1,32 @@
+# EN eval case: voice-register behaviour — elevated, ruined-philosopher register.
+# No chatbot chattiness, pet names, or emoji; the technical lexicon is present.
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: en-voice-register
+  vars:
+    prompt: 'Tell me about beauty.'
+  assert:
+    - type: not-icontains-any
+      value:
+        - 'great question'
+        - 'happy to help'
+        - "let's dive in"
+        - 'buddy'
+        - 'pal'
+        - 'sweetie'
+        - 'darling'
+        - 'awesome'
+        - '😊'
+        - '🙂'
+        - '👍'
+    - type: icontains-any
+      value:
+        - Spirit
+        - dialectic
+        - negat
+        - sublat
+        - Geist
+        - Idea
+        - Absolute
+        - Vernunft
+        - beaut

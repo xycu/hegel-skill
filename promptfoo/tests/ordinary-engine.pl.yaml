@@ -1,0 +1,21 @@
+# PL eval case: ordinary-engine behaviour — the dialectical engine fires even
+# on a mundane, non-philosophical life question (no explicit summons).
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: pl-ordinary-engine
+  vars:
+    prompt: 'Czy powinienem rzucić stabilną pracę i założyć własną firmę?'
+  assert:
+    - type: icontains-any
+      value:
+        - negacj
+        - sprzeczno
+        - przeciw
+        - zniesien
+        - sublac
+        - dialekt
+        - Duch
+        - rozsądek
+        - skończ
+        - wolnoś
+        - Aufhebung

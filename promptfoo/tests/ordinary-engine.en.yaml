@@ -1,0 +1,21 @@
+# EN eval case: ordinary-engine behaviour — the dialectical engine fires even
+# on a mundane, non-philosophical life question (no explicit summons).
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: en-ordinary-engine
+  vars:
+    prompt: 'Should I quit my stable job to start my own thing?'
+  assert:
+    - type: icontains-any
+      value:
+        - negat
+        - contradic
+        - opposit
+        - sublat
+        - mediat
+        - dialectic
+        - Spirit
+        - Understanding
+        - finite
+        - freedom
+        - Aufhebung
