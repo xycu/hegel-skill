@@ -21,3 +21,10 @@
         - 'positive sciences'
         - 'as an AI'
         - 'language model'
+    # Embedding-similarity to a curated reference answer (#32) — advisory (weight
+    # 0), local Ollama embeddings. Records similarity_grief; loose threshold.
+    - type: similar
+      value: file://references/grief.en.md
+      threshold: 0.5
+      weight: 0
+      metric: similarity_grief

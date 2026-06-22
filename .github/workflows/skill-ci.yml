@@ -104,6 +104,12 @@ jobs:
           done
       - name: Pull model
         run: ollama pull ${{ matrix.model }}
+      - name: Pull embedding model
+        # Embedding model for the advisory `similar` asserts (#32). Small (~270 MB)
+        # and pulled for every job — including the canary, whose filtered pl case
+        # carries a similarity assert — so the similarity_* metric can compute.
+        # Keep in sync with EMBED_MODEL's default in the promptfoo configs.
+        run: ollama pull nomic-embed-text
       # Behavioural gate (en/pl): run promptfoo directly (like the canary below)
       # rather than via promptfoo-action. The action runs at concurrency 4, but a
       # single CPU-bound Ollama serves the whole job, so parallel 1600-token
