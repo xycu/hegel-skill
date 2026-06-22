@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/xycu/hegel-skill/compare/v1.1.0...v1.2.0) (2026-06-22)
+
+
+### Features
+
+* **evals:** deterministic custom asserts ([#29](https://github.com/xycu/hegel-skill/issues/29)) ([#68](https://github.com/xycu/hegel-skill/issues/68)) ([956e3d2](https://github.com/xycu/hegel-skill/commit/956e3d2c29045f9d971279e4cb7df9b2136023ff))
+
 ## [1.1.0](https://github.com/xycu/hegel-skill/compare/v1.0.0...v1.1.0) (2026-06-22)
 
 
