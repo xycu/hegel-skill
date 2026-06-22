@@ -20,6 +20,12 @@ shorter human-facing entry point that summarizes the essentials and links back h
 
 - **One change per branch, one concern per PR.** Branch off `main` as `feat/…`,
   `fix/…`, `chore/…`, `ci/…`, or `docs/…`. Don't pile unrelated work into a PR.
+- **Epics land their specs first, then implement per sub-issue.** For a User Story
+  decomposed into sub-issues, open one OpenSpec **change per sub-issue** on a single
+  spec-only branch (`openspec/<epic>-proposals`), validate `--all --strict`, and merge
+  that straight to `main` before any implementation. Each sub-issue is then *implemented*
+  on its own branch, which **archives** its OpenSpec change. This front-loads the agreed
+  scope, keeps the proposals reviewable as a set, and lets the build branches stay small.
 - **Out-of-scope ideas become issues, not scope creep.** If a better assertion, a new
   provider, a CI nicety, etc. surfaces mid-change, open a GitHub issue and keep the
   current PR focused. Label it (`enhancement`, `ci`, `evals`, `governance`, …).
