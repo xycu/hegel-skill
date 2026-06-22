@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/xycu/hegel-skill/compare/v1.2.0...v1.3.0) (2026-06-22)
+
+
+### Features
+
+* **evals:** add advisory llm-rubric semantic grading ([#31](https://github.com/xycu/hegel-skill/issues/31)) ([0c6d17a](https://github.com/xycu/hegel-skill/commit/0c6d17add82cfc6df89802330fa6044dce161edc))
+* **evals:** advisory llm-rubric semantic grading ([#31](https://github.com/xycu/hegel-skill/issues/31)) ([#71](https://github.com/xycu/hegel-skill/issues/71)) ([0c6d17a](https://github.com/xycu/hegel-skill/commit/0c6d17add82cfc6df89802330fa6044dce161edc))
+
 ## [1.2.0](https://github.com/xycu/hegel-skill/compare/v1.1.0...v1.2.0) (2026-06-22)
 
 
