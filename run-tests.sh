@@ -90,16 +90,26 @@ ensure_ollama() {
     return 1
 }
 
-# Pull the eval model if it is not already present. A remote server with no local
-# `ollama` binary is left to the eval runner to surface a missing-model error.
+# Embedding model for the advisory `similar` asserts (#32). Default matches
+# EMBED_MODEL's default in the promptfoo configs; override with EMBED_MODEL.
+EMBED_MODEL=${EMBED_MODEL:-nomic-embed-text}
+
+# Pull the eval model (and the embedding model for `similar` asserts) if absent. A
+# remote server with no local `ollama` binary is left to the eval runner to surface
+# a missing-model error. The embedding pull is best-effort: `similar` is advisory
+# (weight 0), so a missing embedding model never fails the suite.
 ensure_model() {
     command -v ollama >/dev/null 2>&1 || return 0
     if ollama show "$MODEL" >/dev/null 2>&1; then
         printf 'Model %s already present.\n' "$MODEL"
-        return 0
+    else
+        printf 'Model %s not present — pulling it...\n' "$MODEL"
+        ollama pull "$MODEL" || return 1
     fi
-    printf 'Model %s not present — pulling it...\n' "$MODEL"
-    ollama pull "$MODEL"
+    if ! ollama show "$EMBED_MODEL" >/dev/null 2>&1; then
+        printf 'Embedding model %s not present — pulling it...\n' "$EMBED_MODEL"
+        ollama pull "$EMBED_MODEL" || printf 'warning: could not pull %s; similar asserts will be skipped.\n' "$EMBED_MODEL"
+    fi
 }
 
 # run <label> <command...>

@@ -20,18 +20,26 @@ providers:
 defaultTest:
   vars:
     lang: en
-  # Grader for model-graded asserts (llm-rubric) — the local Ollama judge chosen
-  # in #30: zero secrets, zero API cost, self-contained. Greedy (temperature 0)
-  # so judging is stable even though generation stays creative (0.7). GRADER_MODEL
-  # overrides the judge independently of the model under test (EVAL_MODEL).
+  # Providers for model-graded asserts — all the local Ollama judge chosen in #30
+  # (zero secrets, zero API cost, self-contained). `text` grades llm-rubric (#31);
+  # `embedding` powers `similar` embedding-similarity asserts (#32). GRADER_MODEL /
+  # EMBED_MODEL override each independently of the model under test (EVAL_MODEL).
   options:
     provider:
-      id: 'ollama:chat:{{ env.GRADER_MODEL | default("gemma4:e4b-it-qat") }}'
-      config:
-        num_ctx: 8192
-        num_predict: 512
-        temperature: 0
-        seed: 7
+      # llm-rubric judge — greedy (temperature 0) so judging is stable even though
+      # generation stays creative (0.7).
+      text:
+        id: 'ollama:chat:{{ env.GRADER_MODEL | default("gemma4:e4b-it-qat") }}'
+        config:
+          num_ctx: 8192
+          # A rubric verdict is a short pass/fail + one-line reason; a tight
+          # num_predict keeps each judge call fast (CI runtime, #37).
+          num_predict: 200
+          temperature: 0
+          seed: 7
+      # embedding model for `similar` asserts.
+      embedding:
+        id: 'ollama:embeddings:{{ env.EMBED_MODEL | default("nomic-embed-text") }}'
   assert:
     # The slop footer is advisory: a bare system-prompted local model (no
     # stop-slop skill) usually can't perform the self-scoring loop. weight 0 =
