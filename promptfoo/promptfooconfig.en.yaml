@@ -32,7 +32,9 @@ defaultTest:
         id: 'ollama:chat:{{ env.GRADER_MODEL | default("gemma4:e4b-it-qat") }}'
         config:
           num_ctx: 8192
-          num_predict: 512
+          # A rubric verdict is a short pass/fail + one-line reason; a tight
+          # num_predict keeps each judge call fast (CI runtime, #37).
+          num_predict: 200
           temperature: 0
           seed: 7
       # embedding model for `similar` asserts.
