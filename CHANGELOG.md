@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/xycu/hegel-skill/compare/v1.0.0...v1.1.0) (2026-06-22)
+
+
+### Features
+
+* **evals:** cover the four untested persona behaviours ([#35](https://github.com/xycu/hegel-skill/issues/35)) ([#49](https://github.com/xycu/hegel-skill/issues/49)) ([8566114](https://github.com/xycu/hegel-skill/commit/856611408511b29d881714759fe0b5062e3fbac4))
+
 ## [1.0.0](https://github.com/xycu/hegel-skill/compare/v0.1.0...v1.0.0) (2026-06-21)
 
 
