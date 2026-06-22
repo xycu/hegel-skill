@@ -28,6 +28,16 @@ defaultTest:
       value: '[Ss][Ll][Oo][Pp]:\s*\d+\s*/\s*10'
       weight: 0
       metric: slop_footer
+    # Deterministic custom asserts (#29) — advisory (weight 0): parse the footer
+    # score as a number, and record response shape. No model, no network.
+    - type: javascript
+      value: file://asserts/footer-score.js
+      weight: 0
+      metric: slop_score
+    - type: javascript
+      value: file://asserts/response-shape.js
+      weight: 0
+      metric: response_shape
 
 # One file per persona behaviour under tests/; the glob picks up every EN
 # behaviour file, so new behaviours (e.g. coverage/robustness work) are
