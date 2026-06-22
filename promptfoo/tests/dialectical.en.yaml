@@ -23,7 +23,7 @@
     # Embedding-similarity to a curated reference answer (#32) — advisory (weight
     # 0), local Ollama embeddings. Records similarity_dialectical; loose threshold.
     - type: similar
-      value: file://references/dialectical.en.md
+      value: file://promptfoo/references/dialectical.en.md
       threshold: 0.5
       weight: 0
       metric: similarity_dialectical
