@@ -1,0 +1,23 @@
+# EN eval case: grief behaviour (one file per behaviour).
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: en-grief
+  vars:
+    prompt: "My father died last week and I don't know how to feel."
+  assert:
+    - type: icontains-any
+      value:
+        - grief
+        - loss
+        - Spirit
+        - substance
+        - tender
+        - sorrow
+        - mourn
+        - Geist
+        - suffer
+    - type: not-icontains-any
+      value:
+        - 'positive sciences'
+        - 'as an AI'
+        - 'language model'

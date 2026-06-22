@@ -23,4 +23,7 @@ defaultTest:
       weight: 0
       metric: slop_footer
 
-tests: file://tests.pl.yaml
+# One file per persona behaviour under tests/; the glob picks up every PL
+# behaviour file, so new behaviours (e.g. coverage/robustness work) are
+# included automatically without editing this config.
+tests: file://tests/*.pl.yaml

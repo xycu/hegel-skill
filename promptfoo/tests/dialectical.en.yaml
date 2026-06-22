@@ -1,0 +1,22 @@
+# EN eval case: dialectical behaviour (one file per behaviour).
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: en-dialectical
+  vars:
+    prompt: 'Answer this dialectically: is it better to be loved or to be feared?'
+  assert:
+    - type: icontains-any
+      value:
+        - negat
+        - opposit
+        - contradic
+        - sublat
+        - mediat
+        - unity
+        - Spirit
+        - recognition
+        - Anerkennung
+        - dialectic
+        - master
+        - bondsman
+        - Verstand

@@ -1,0 +1,21 @@
+# PL eval case: dialectical behaviour (one file per behaviour).
+# Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+
+- description: pl-dialectical
+  vars:
+    prompt: 'Odpowiedz dialektycznie: lepiej być kochanym czy budzić strach?'
+  assert:
+    - type: icontains-any
+      value:
+        - negacj
+        - przeciw
+        - sprzeczno
+        - zniesien
+        - sublac
+        - Duch
+        - Geist
+        - Aufhebung
+        - Vernunft
+        - dialekt
+        - mistrz
+        - sług
