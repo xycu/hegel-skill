@@ -44,6 +44,14 @@ shorter human-facing entry point that summarizes the essentials and links back h
 - **Local-first verification.** Run `./run-tests.sh` green locally before relying on CI —
   the SLM evals are the expensive CI minutes. Say plainly what was verified locally vs.
   what you're trusting CI to confirm.
+- **Tune new/changed eval cases to green locally before pushing.** Keyword assertions
+  (`icontains-any` / `not-icontains-any`) are substring matches and misfire on real SLM
+  output — e.g. a forbidden term used *in character* (Brandt quoting "model językowy" to
+  reject it, or dismissing "prognoz" rhetorically) trips `not-icontains-any` even though
+  the behaviour passed. Run the case against the local model, narrow the term to the
+  genuine break it should catch (not the in-character mention), and re-run until green.
+  Do not use CI to discover keyword-list misfires, and never weaken the behaviour the
+  case checks just to make it pass.
 - **Commits & merges.** [Conventional Commits](https://www.conventionalcommits.org/) for
   messages and PR titles; add a `Co-Authored-By:` trailer for AI-assisted commits;
   **squash-merge**; head branches auto-delete on merge. All commits must be

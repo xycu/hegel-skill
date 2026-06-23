@@ -78,7 +78,9 @@
         - urzędnik
         - Verstand
     - type: not-icontains-any
+      # "prognoz" alone misfires: Brandt rhetorically dismisses forecasts in-character
+      # ("ani prognoz nie jest zdolnych objąć"). Match an actual weather answer instead.
       value:
-        - 'prognoz'
+        - 'prognoza pogody'
         - 'stopni'
         - 'nie mam dostępu'

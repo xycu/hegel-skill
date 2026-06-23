@@ -26,6 +26,11 @@ authoritative detail.
 - **Test locally first.** Run `./run-tests.sh` green before relying on CI (lint + the EN/PL
   promptfoo SLM evals over Ollama) — the SLM evals are the expensive CI minutes. Say
   plainly what you verified locally vs. what you're trusting CI to confirm.
+- **Tune new or changed eval cases to green locally before pushing.** The keyword
+  assertions are substring matches and can misfire on real SLM output — a forbidden term
+  used *in character* still trips `not-icontains-any`. Run the case against the local
+  model, narrow the term to the genuine break it should catch, and re-run until green;
+  don't let CI discover the misfire, and don't weaken the behaviour the case checks.
   → [AGENTS.md → Tests](AGENTS.md#tests)
 - **Non-trivial changes are spec-driven.** Behavioural *and* tooling/CI/infra changes go
   through [OpenSpec](https://github.com/Fission-AI/OpenSpec) first; pure prose polish that
