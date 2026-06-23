@@ -28,3 +28,13 @@ variable "region" {
   description = "GCP region (exposed to CI as a repo variable)."
   type        = string
 }
+
+variable "project_id" {
+  description = "GCP project id (exposed to CI as a repo variable)."
+  type        = string
+}
+
+variable "tfstate_bucket" {
+  description = "GCS state bucket name (exposed to CI as a repo variable)."
+  type        = string
+}

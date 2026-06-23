@@ -14,6 +14,11 @@ variable "github_owner" {
   type        = string
 }
 
+variable "tfstate_bucket" {
+  description = "GCS bucket holding remote state (published to CI as a repo variable)."
+  type        = string
+}
+
 variable "github_repository" {
   description = "GitHub repository name (without owner)."
   type        = string

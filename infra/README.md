@@ -33,22 +33,36 @@ These exist before OpenTofu runs, so create them by hand once:
 
 > Confirm Cloud Run **GPU-on-Jobs (L4)** is GA in your chosen region before applying.
 
-## Usage
+## Usage (phased — the job needs the image, the image needs the registry)
 
 ```sh
 cd infra
 tofu init -backend-config=backend.hcl
-tofu plan
-tofu apply
+
+# Phase 1 — create just the Artifact Registry repo (and the APIs it needs).
+tofu apply -target=google_artifact_registry_repository.eval
 ```
 
 Build & push the eval image (from the repo root):
 
 ```sh
+gcloud auth configure-docker europe-west4-docker.pkg.dev
 docker build -f infra/docker/Dockerfile \
-  -t "$REGION-docker.pkg.dev/$PROJECT/hegel-eval/eval:latest" .
-docker push "$REGION-docker.pkg.dev/$PROJECT/hegel-eval/eval:latest"
+  -t "europe-west4-docker.pkg.dev/hegel-skill-ci/hegel-eval/eval:latest" .
+docker push "europe-west4-docker.pkg.dev/hegel-skill-ci/hegel-eval/eval:latest"
 ```
+
+```sh
+# Phase 2 — everything else (WIF, the L4 job referencing the image, GitHub config).
+tofu plan
+tofu apply
+```
+
+The apply publishes every value CI needs as **repo variables** (`GCP_PROJECT_ID`,
+`GCP_REGION`, `GCP_TFSTATE_BUCKET`, `GCP_WORKLOAD_IDENTITY_PROVIDER`,
+`GCP_SERVICE_ACCOUNT`, `EVAL_JOB_NAME`) — so don't set those by hand, or the apply will
+clash with an existing variable. The first apply is therefore **local**; plan-on-PR works
+afterwards.
 
 ## Importing existing GitHub config
 

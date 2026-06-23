@@ -59,4 +59,6 @@ module "github_repo" {
   runner_service_account     = module.wif.runner_service_account_email
   eval_job_name              = module.cloud_run_eval.job_name
   region                     = var.region
+  project_id                 = var.project_id
+  tfstate_bucket             = var.tfstate_bucket
 }

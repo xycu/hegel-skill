@@ -1,6 +1,7 @@
 # Copy to terraform.tfvars and fill in.
-project_id        = "your-gcp-project-id"
+project_id        = "hegel-skill-ci"
 region            = "europe-west4" # EU; confirm Cloud Run GPU-on-Jobs (L4) is GA here
+tfstate_bucket    = "hegel-skill-tfstate-ew4"
 github_owner      = "xycu"
 github_repository = "hegel-skill"
 
