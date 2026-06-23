@@ -228,6 +228,27 @@ type is derived from the Conventional Commit type of each squash subject (`fix:`
   `1.0.0` (via a one-time `release-as` bootstrap, since removed); every release after it
   derives its version from the Conventional Commit history, as above.
 
+## Infrastructure (IaC)
+
+The CI/eval environment (GCP) and this repo's GitHub configuration are defined as
+**OpenTofu** under `infra/` (Terraform-compatible; OpenTofu is the supported tool). See
+[`infra/README.md`](infra/README.md) for layout, one-time bootstrap, and commands.
+
+- **No Terragrunt** — single project/env, it would be pure overhead.
+- **State** lives in a versioned GCS bucket (`tofu init -backend-config=backend.hcl`);
+  never local. **Secrets** come from Secret Manager, never plaintext state.
+- **GHA → GCP auth is keyless via Workload Identity Federation** (`modules/wif`); there are
+  **no long-lived service-account keys**.
+- **The GitHub config is code** (`modules/github-repo`): the signed-commits ruleset, the
+  `evals` environment + reviewers + prevent-self-review, labels, and CI variables — so it is
+  backed up and drift-detectable. Existing resources must be `tofu import`ed before the first
+  apply (see the README) so they're adopted, not recreated.
+- **Evals run on a GPU Cloud Run Job** (`modules/cloud-run-eval`, NVIDIA L4) with models
+  baked into the Artifact Registry image (`infra/docker`); CI invokes the job, exit code
+  propagates pass/fail, results post via the sticky comment. This is the hardware fix for #76.
+- **Plan-on-PR** (`.github/workflows/infra-plan.yml`) runs `fmt`/`validate`/`plan` on every
+  `infra/**` change; **apply is run by the maintainer**, never in CI.
+
 ## Spec-driven development (OpenSpec)
 
 The invariants above are also encoded as machine-checkable requirements in
