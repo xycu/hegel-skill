@@ -49,6 +49,20 @@ shorter human-facing entry point that summarizes the essentials and links back h
   **squash-merge**; head branches auto-delete on merge. All commits must be
   **signed and verified** — see "Signed commits" below. These rules are enforced
   (Conventional Commits #11, branch protection #13, signed commits #12).
+- **Don't blind-arm auto-merge.** `main` currently requires **no status checks**
+  (the release-PR caveat below), so `gh pr merge --auto` merges the instant the PR is
+  merge-clean — *before* the eval run finishes. This shipped #71 unreviewed-by-CI and
+  caused a downstream conflict. Until #73 makes the checks required-safe, **watch the
+  Skill-CI run go green, then merge by hand**; only auto-arm a PR whose checks are
+  already required and green.
+- **Skill CI runs in reviewed-PR mode.** Every eval job `needs:` a `gate` job bound to
+  the **`evals` environment**, so a run sits *"Waiting for review"* and **no runner
+  starts until approved** (one approval releases the whole run). Self-approve is allowed
+  (PR → Checks → *Review deployments* → tick `evals` → *Approve and deploy*). It is
+  **PR-only** (+ `workflow_dispatch`); the push-to-`main` trigger was removed so eval
+  minutes aren't spent on every commit. **Don't cancel a run that's still "Waiting for
+  review"** — a cancelled job renders as a red ❌ on the PR (purely cosmetic, but it
+  looks like a real failure). Leave it waiting, or approve and let it finish.
 - **Report honestly.** Distinguish "verified" from "assumed"; if a check was skipped,
   redundant, or merged-while-pending, say so and why. Don't claim a green you didn't see.
 
@@ -148,9 +162,16 @@ When both gates pass, append the aside as a **final paragraph**, blank-line-sepa
 Two automated layers guard against regressions (CI: `.github/workflows/skill-ci.yml`):
 `tools/skill_lint.py` (deterministic package/frontmatter lint, no model) and the
 [promptfoo](https://www.promptfoo.dev/) SLM smoke evals (`promptfoo/`, EN + PL configs
-over Ollama on `gemma4:e4b-it-qat`). Assertions are promptfoo contract checks
-(`icontains-any` / `icontains-all` / `not-icontains-any`, case-insensitive); the `slop:`
-footer is an advisory weight-0 metric, never a failure. The system prompt (SKILL.md +
+over Ollama on `gemma4:e4b-it-qat`). Assertions are a mix: deterministic contract checks
+(`icontains-any` / `icontains-all` / `not-icontains-any`, case-insensitive; custom
+`javascript` asserts) and model-graded ones — `llm-rubric` (semantic voice/dialectic/
+citation grading) and `similar` (embedding-similarity vs curated reference answers in
+`promptfoo/references/`). The model-graded asserts use a **local Ollama judge**
+(`GRADER_MODEL`, greedy) and embedder (`EMBED_MODEL`, default `nomic-embed-text`) wired via
+`defaultTest.options.provider` `{text, embedding}` — zero secrets, zero API cost. Every
+non-contract assert (rubrics, `similar`, the `slop:` footer, footer-score/shape) is
+**advisory weight-0**: recorded as a metric, never fails a case yet — promotable to a
+threshold once trustworthy. The system prompt (SKILL.md +
 reference, plus a Polish language directive for weak proxy models) is assembled by
 `promptfoo/prompt.js`. CI renders each run to a self-contained HTML report
 (`promptfoo export eval latest`, gitignored) and uploads it as a downloadable
@@ -168,6 +189,14 @@ down afterward, and auto-pulls the model if missing. promptfoo is used from a gl
 install if present, else a pinned `npx`. Iterate locally before pushing — the SLM evals
 are the expensive CI minutes. These smoke evals catch obvious regressions only; they do
 **not** replace manual Claude Code validation before a release.
+
+**`file://` gotcha.** A `file://` path *inside an assert value* (e.g. a `similar`
+reference or a `javascript` assert) resolves relative to the **process CWD (repo root)**,
+not the config dir — so write `file://promptfoo/references/foo.en.md`, not
+`file://references/foo.en.md`. This differs from the top-level `tests:` glob, which *is*
+config-dir-relative. And a missing assert `file://` is a **hard config-load crash**
+(`maybeLoadFromExternalFile`), not an advisory weight-0 skip — a typo'd path fails the
+whole suite, not one case.
 
 ## Releases
 
