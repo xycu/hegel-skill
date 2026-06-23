@@ -6,7 +6,7 @@ variable "project_id" {
 variable "region" {
   description = "GCP region for Artifact Registry and the Cloud Run eval job. Must offer Cloud Run GPU (L4) on Jobs."
   type        = string
-  default     = "us-central1"
+  default     = "europe-west4"
 }
 
 variable "github_owner" {

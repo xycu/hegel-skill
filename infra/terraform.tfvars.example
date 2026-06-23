@@ -1,6 +1,6 @@
 # Copy to terraform.tfvars and fill in.
 project_id        = "your-gcp-project-id"
-region            = "us-central1" # confirm Cloud Run GPU-on-Jobs (L4) is GA here
+region            = "europe-west4" # EU; confirm Cloud Run GPU-on-Jobs (L4) is GA here
 github_owner      = "xycu"
 github_repository = "hegel-skill"
 
