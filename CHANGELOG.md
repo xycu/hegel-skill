@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/xycu/hegel-skill/compare/v1.4.0...v1.5.0) (2026-06-23)
+
+
+### Features
+
+* **ci:** fast-PR + nightly-full eval split (drop GPU runner) ([#80](https://github.com/xycu/hegel-skill/issues/80)) ([119c3c6](https://github.com/xycu/hegel-skill/commit/119c3c623786bb0045e02ff8a7e8ff99455c2442))
+
 ## [1.4.0](https://github.com/xycu/hegel-skill/compare/v1.3.0...v1.4.0) (2026-06-22)
 
 
