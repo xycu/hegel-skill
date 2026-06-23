@@ -1,10 +1,11 @@
 name: Skill CI
 
 on:
-  # PR-only + manual. Skill CI no longer runs on every push: the whole workflow
-  # is gated behind a manual approval (the `gate` job's `evals` environment) so
-  # the eval runners — intended to move to paid runners — fire only once a
-  # maintainer approves. Pushes to main do not auto-run it.
+  # PR-only + manual. This is the FAST gate: deterministic lint + the three core
+  # behaviours (EN+PL) with the model-graded judge OFF, so a PR finishes in minutes.
+  # The full, model-graded suite (all behaviours, both languages, llm-rubric on)
+  # runs nightly — see skill-ci-nightly.yml. The whole workflow stays behind a manual
+  # approval (the `gate` job's `evals` environment); pushes to main do not run it.
   pull_request:
     paths: &skill_paths
       - 'skills/**'
@@ -22,13 +23,16 @@ concurrency:
 env:
   # Single source of truth for the promptfoo version (matches run-tests.sh).
   PROMPTFOO_VERSION: "0.121.17"
+  # The three core behaviours the fast PR gate runs (matches descriptions in
+  # promptfoo/tests/<behaviour>.<lang>.yaml, e.g. `en-dialectical`). Nightly runs all.
+  CORE_FILTER: "-(dialectical|grief|technical-dismissal)$"
 
 jobs:
   # Manual approval checkpoint for the whole workflow. This job uses the `evals`
   # environment (Settings → Environments → evals → Required reviewers), so it sits
-  # "Waiting for review" and NOTHING downstream starts — no runner spins up — until
-  # a maintainer approves. Self-approval is allowed (Prevent self-review is off).
-  # Every other job `needs: gate`, so one approval releases the entire run.
+  # "Waiting for review" and NOTHING downstream starts until a maintainer approves.
+  # Self-approval is allowed (Prevent self-review is off). Every other job
+  # `needs: gate`, so one approval releases the entire run.
   gate:
     name: Approve eval run
     runs-on: ubuntu-latest
@@ -45,8 +49,8 @@ jobs:
     # Skip the release-please PR. It only bumps version fields under
     # .claude-plugin/** (which matches the paths filter), so it would otherwise
     # trigger this workflow — forcing the Actions manual-approval gate and a
-    # pointless ~40-min eval run on a version-only change (#61). On normal PRs
-    # head_ref doesn't start with the prefix, so they still run.
+    # pointless eval run on a version-only change (#61). On normal PRs head_ref
+    # doesn't start with the prefix, so they still run.
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     steps:
       - uses: actions/checkout@v5
@@ -58,16 +62,15 @@ jobs:
       - name: Check version fields are in lockstep
         run: python tools/version_check.py
 
-  local-slm-smoke:
-    name: Local SLM smoke (${{ matrix.language }})
-    # TODO(#76): switch to the paid/larger runner label once billing is enabled
-    # (e.g. a GitHub larger-runner label or a self-hosted group). The `gate` job
-    # ensures this paid runner only starts after a maintainer approves.
+  core-slm-smoke:
+    name: Core SLM smoke (${{ matrix.language }})
     runs-on: ubuntu-latest
     needs: [gate, lint]
     # Also skip on the release-please PR (see the lint job).
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
-    timeout-minutes: 90
+    # Fast gate: 3 core behaviours, judge off. 30 min is ample headroom; the full
+    # graded suite that used to crowd the 90-min envelope now runs nightly.
+    timeout-minutes: 30
     # Canary jobs are informational compatibility checks: report pass/fail but
     # never block the build (their models are third-party and may drift).
     continue-on-error: ${{ matrix.canary == true }}
@@ -79,18 +82,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Behavioural gates: gemma4:e4b-it-qat handles EN and PL 4/4.
+          # Behavioural gates: gemma4:e4b-it-qat handles EN and PL. The core configs
+          # carry no llm-rubric / similar asserts, so no grader model is pulled.
           - language: en
             display: English
             model: gemma4:e4b-it-qat
-            config: promptfoo/promptfooconfig.en.yaml
-            filter: ""
+            config: promptfoo/promptfooconfig.core.en.yaml
             canary: false
           - language: pl
             display: Polish
             model: gemma4:e4b-it-qat
-            config: promptfoo/promptfooconfig.pl.yaml
-            filter: ""
+            config: promptfoo/promptfooconfig.core.pl.yaml
             canary: false
           # Compatibility canary: one Polish case on a Polish-native model
           # (Bielik-7B). Non-blocking. PLLuM was dropped — too terse / breaks
@@ -98,7 +100,7 @@ jobs:
           - language: pl-canary-bielik7b
             display: Polish (canary)
             model: hf.co/speakleash/Bielik-Minitron-7B-v3.0-Instruct-GGUF:Q4_K_M
-            config: promptfoo/promptfooconfig.pl.yaml
+            config: promptfoo/promptfooconfig.core.pl.yaml
             filter: pl-dialectical
             canary: true
     steps:
@@ -123,28 +125,18 @@ jobs:
           done
       - name: Pull model
         run: ollama pull ${{ matrix.model }}
-      - name: Pull embedding model
-        # Embedding model for the advisory `similar` asserts (#32). Small (~270 MB)
-        # and pulled for every job — including the canary, whose filtered pl case
-        # carries a similarity assert — so the similarity_* metric can compute.
-        # Keep in sync with EMBED_MODEL's default in the promptfoo configs.
-        run: ollama pull nomic-embed-text
-      # Behavioural gate (en/pl): run promptfoo directly (like the canary below)
-      # rather than via promptfoo-action. The action runs at concurrency 4, but a
-      # single CPU-bound Ollama serves the whole job, so parallel 1600-token
-      # generations starve each other and a call can exceed the request timeout
-      # and error (failing the 100% gate). `-j 1` serves one request at a time —
-      # each call is fast — mirroring the local runner (#47); REQUEST_TIMEOUT_MS
-      # raises the per-call timeout (default 300s) as margin. `promptfoo eval`
-      # exits non-zero on any non-pass, so this stays a hard 100% gate. The HTML
-      # report and the sticky-comment summary read from promptfoo's local store
-      # (`export eval latest`), so dropping the action does not affect them.
+      # Behavioural gate (en/pl): run promptfoo directly. `-j 1` serves one request
+      # at a time so the single CPU-bound Ollama doesn't starve under parallelism
+      # (#47); REQUEST_TIMEOUT_MS raises the per-call timeout as margin. The core
+      # config has no model-graded asserts, so this is generation + keyword checks
+      # only. `--filter-pattern` narrows to the three core behaviours. `promptfoo
+      # eval` exits non-zero on any non-pass, so this stays a hard 100% gate.
       - name: Run evals (behavioural gate)
         if: ${{ matrix.canary != true }}
         env:
           EVAL_MODEL: ${{ matrix.model }}
           REQUEST_TIMEOUT_MS: "600000"
-        run: promptfoo eval -c ${{ matrix.config }} --no-cache -j 1
+        run: promptfoo eval -c ${{ matrix.config }} --no-cache -j 1 --filter-pattern "${CORE_FILTER}"
       # Canary: filtered single case on a third-party model; non-blocking, no comment.
       - name: Run canary eval
         if: ${{ matrix.canary == true }}
@@ -152,14 +144,10 @@ jobs:
           EVAL_MODEL: ${{ matrix.model }}
         run: promptfoo eval -c ${{ matrix.config }} --no-cache --filter-pattern ${{ matrix.filter }} --verbose
       # Render the just-run eval to a self-contained HTML report from promptfoo's
-      # local store. `export eval latest` re-renders the stored result without a
-      # second model run, so it works for every job kind regardless of how the
-      # eval was invoked. `always()` so a failed eval still produces it.
+      # local store. `always()` so a failed eval still produces it.
       - name: Render HTML report
         if: always()
         run: promptfoo export eval latest -o promptfoo-report-${{ matrix.language }}.html
-      # Publish it so the full result table is downloadable from the run's Artifacts
-      # section. `warn` (not ignore) keeps a missing report visible in the log.
       - name: Upload eval report
         if: always()
         uses: actions/upload-artifact@v7
@@ -169,8 +157,7 @@ jobs:
           if-no-files-found: warn
       # Extract a compact pass/fail summary from the same stored eval so the
       # aggregate job can assemble one combined PR comment. `always()` so a failed
-      # gate still reports its counts. successes/failures/errors are promptfoo's
-      # per-test-case counts; total is their sum.
+      # gate still reports its counts.
       - name: Summarize result
         if: always()
         env:
@@ -207,7 +194,7 @@ jobs:
   aggregate-eval-comment:
     name: Eval results comment
     runs-on: ubuntu-latest
-    needs: local-slm-smoke
+    needs: core-slm-smoke
     if: ${{ always() && github.event_name == 'pull_request' && !startsWith(github.head_ref, 'release-please--') }}
     permissions:
       contents: read
@@ -256,7 +243,7 @@ jobs:
               overall='❌ fail'
             fi
           fi
-          body=$(printf '%s\n### 🧪 SLM smoke evals\n\nThe skill run against local models via Ollama (promptfoo). Behavioural **gates** must pass every case (100%%); **canaries** are third-party-model compatibility checks and never block.\n\n%s\n\n**Gate status: %s** — commit `%s`. Per-language HTML reports and full logs are in the [workflow run](%s) → Artifacts.\n' \
+          body=$(printf '%s\n### 🧪 Core SLM smoke (fast PR gate)\n\nThe three core behaviours (dialectical, grief, technical-dismissal) run against local models via Ollama (promptfoo), **keyword gates only — no model-graded judge**. Behavioural **gates** must pass every case (100%%); **canaries** are third-party-model compatibility checks and never block. The full model-graded suite (all behaviours, both languages, llm-rubric on) runs nightly.\n\n%s\n\n**Gate status: %s** — commit `%s`. Per-language HTML reports and full logs are in the [workflow run](%s) → Artifacts.\n' \
             "$marker" "$table" "$overall" "${HEAD_SHA:0:7}" "$RUN_URL")
           # Find a prior sticky comment by its hidden marker. Capture the full API
           # result first, then pick the first id — piping --paginate straight into

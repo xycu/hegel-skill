@@ -1,0 +1,54 @@
+name: Infra plan
+
+# Plan-on-PR for the OpenTofu IaC. Plan only — apply is run by the maintainer.
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra-plan.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write       # mint the OIDC token for WIF
+  pull-requests: write  # post the plan comment
+
+defaults:
+  run:
+    working-directory: infra
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    # Skips (not fails) until the WIF bootstrap variables are set on the repo.
+    if: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Authenticate to GCP (WIF, keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - uses: opentofu/setup-opentofu@v1
+
+      - name: tofu fmt
+        run: tofu fmt -check -recursive
+
+      - name: tofu init
+        run: tofu init -backend-config="bucket=${{ vars.GCP_TFSTATE_BUCKET }}"
+
+      - name: tofu validate
+        run: tofu validate
+
+      - name: tofu plan
+        id: plan
+        run: tofu plan -no-color -input=false
+        env:
+          # PAT with repo admin so the github provider can manage rulesets/env.
+          GITHUB_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+          TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+          TF_VAR_region: ${{ vars.GCP_REGION }}
+          TF_VAR_github_owner: ${{ github.repository_owner }}
+          TF_VAR_github_repository: ${{ github.event.repository.name }}

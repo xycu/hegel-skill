@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars and fill in.
+project_id        = "hegel-skill-ci"
+region            = "europe-west4" # state-bucket locality + a published CI variable
+tfstate_bucket    = "hegel-skill-tfstate-ew4"
+github_owner      = "xycu"
+github_repository = "hegel-skill"
+
+# GitHub usernames allowed to approve the `evals` deployment gate.
+eval_reviewers = ["xycu"]

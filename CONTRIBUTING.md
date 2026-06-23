@@ -31,6 +31,11 @@ authoritative detail.
   through [OpenSpec](https://github.com/Fission-AI/OpenSpec) first; pure prose polish that
   changes no requirement is exempt.
   → [AGENTS.md → Spec-driven development](AGENTS.md#spec-driven-development-openspec)
+- **Infrastructure is code.** This repo's GitHub config and keyless GCP auth live as
+  OpenTofu in `infra/` — WIF auth (no SA keys), versioned GCS state. Evals run on
+  GitHub-hosted runners (fast subset per PR, full suite nightly), not GPU hardware.
+  Plan-on-PR is automatic; `apply` is the maintainer's.
+  → [AGENTS.md → Infrastructure](AGENTS.md#infrastructure-iac) and [`infra/README.md`](infra/README.md)
 
 ## Before you open a PR
 

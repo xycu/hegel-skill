@@ -1,7 +1,12 @@
-# English SLM smoke evals for the soused-hegelian skill.
+# English SLM smoke evals for the soused-hegelian skill — FULL suite.
 # Run: promptfoo eval -c promptfoo/promptfooconfig.en.yaml
 # Model: set EVAL_MODEL (default gemma4:e4b-it-qat). Host: OLLAMA_BASE_URL.
-description: soused-hegelian EN smoke evals
+#
+# This is the full, model-graded suite: all behaviours under tests/ plus the three
+# generic llm-rubric quality grades. It runs NIGHTLY (skill-ci-nightly.yml) and
+# locally via run-tests.sh, where wall-clock time is free. Pull requests run the
+# fast, judge-free subset instead — see promptfooconfig.core.en.yaml.
+description: soused-hegelian EN smoke evals (full)
 
 prompts:
   - file://prompt.js
@@ -20,10 +25,10 @@ providers:
 defaultTest:
   vars:
     lang: en
-  # Providers for model-graded asserts — all the local Ollama judge chosen in #30
-  # (zero secrets, zero API cost, self-contained). `text` grades llm-rubric (#31);
-  # `embedding` powers `similar` embedding-similarity asserts (#32). GRADER_MODEL /
-  # EMBED_MODEL override each independently of the model under test (EVAL_MODEL).
+  # Provider for the model-graded llm-rubric asserts — the local Ollama judge
+  # chosen in #30 (zero secrets, zero API cost, self-contained). `text` grades
+  # llm-rubric (#31). GRADER_MODEL overrides the judge independently of the model
+  # under test (EVAL_MODEL).
   options:
     provider:
       # llm-rubric judge — greedy (temperature 0) so judging is stable even though
@@ -37,9 +42,6 @@ defaultTest:
           num_predict: 200
           temperature: 0
           seed: 7
-      # embedding model for `similar` asserts.
-      embedding:
-        id: 'ollama:embeddings:{{ env.EMBED_MODEL | default("nomic-embed-text") }}'
   assert:
     # The slop footer is advisory: a bare system-prompted local model (no
     # stop-slop skill) usually can't perform the self-scoring loop. weight 0 =
