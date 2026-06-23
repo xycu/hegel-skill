@@ -40,7 +40,12 @@ authoritative detail.
 4. For a non-trivial change, the OpenSpec change validates
    (`openspec validate --all --strict`).
 5. Open the PR early (a proposal commit is enough), let CI confirm, archive the OpenSpec
-   change if any, then merge.
+   change if any, then merge. The Skill-CI eval run sits *"Waiting for review"* until you
+   approve it (PR → Checks → *Review deployments* → `evals` → *Approve and deploy*; self-
+   approve is fine — this is the deployment gate, **not** the PR *Files changed → Approve*
+   button, which GitHub never lets an author press and which isn't required here). Wait for
+   it to go green, then merge by hand — don't blind-arm
+   `--auto`, and don't cancel a still-waiting run (it shows up red but isn't a failure).
 
 ## Reporting honestly
 
