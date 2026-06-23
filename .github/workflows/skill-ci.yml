@@ -1,6 +1,10 @@
 name: Skill CI
 
 on:
+  # PR-only + manual. Skill CI no longer runs on every push: the whole workflow
+  # is gated behind a manual approval (the `gate` job's `evals` environment) so
+  # the eval runners — intended to move to paid runners — fire only once a
+  # maintainer approves. Pushes to main do not auto-run it.
   pull_request:
     paths: &skill_paths
       - 'skills/**'
@@ -9,9 +13,6 @@ on:
       - '.claude-plugin/**'
       - 'run-tests.sh'
       - '.github/workflows/skill-ci.yml'
-  push:
-    branches: [main]
-    paths: *skill_paths
   workflow_dispatch:
 
 concurrency:
@@ -23,14 +24,29 @@ env:
   PROMPTFOO_VERSION: "0.121.17"
 
 jobs:
+  # Manual approval checkpoint for the whole workflow. This job uses the `evals`
+  # environment (Settings → Environments → evals → Required reviewers), so it sits
+  # "Waiting for review" and NOTHING downstream starts — no runner spins up — until
+  # a maintainer approves. Self-approval is allowed (Prevent self-review is off).
+  # Every other job `needs: gate`, so one approval releases the entire run.
+  gate:
+    name: Approve eval run
+    runs-on: ubuntu-latest
+    environment: evals
+    # Skip the release-please PR so it never prompts for approval (see lint).
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
+    steps:
+      - run: echo "Eval run approved — releasing Skill CI jobs."
+
   lint:
     name: Deterministic skill lint
     runs-on: ubuntu-latest
+    needs: gate
     # Skip the release-please PR. It only bumps version fields under
     # .claude-plugin/** (which matches the paths filter), so it would otherwise
     # trigger this workflow — forcing the Actions manual-approval gate and a
-    # pointless ~40-min eval run on a version-only change (#61). On push and
-    # normal PRs head_ref doesn't start with the prefix, so they still run.
+    # pointless ~40-min eval run on a version-only change (#61). On normal PRs
+    # head_ref doesn't start with the prefix, so they still run.
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     steps:
       - uses: actions/checkout@v5
@@ -44,8 +60,11 @@ jobs:
 
   local-slm-smoke:
     name: Local SLM smoke (${{ matrix.language }})
+    # TODO(#76): switch to the paid/larger runner label once billing is enabled
+    # (e.g. a GitHub larger-runner label or a self-hosted group). The `gate` job
+    # ensures this paid runner only starts after a maintainer approves.
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [gate, lint]
     # Also skip on the release-please PR (see the lint job).
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     timeout-minutes: 90
