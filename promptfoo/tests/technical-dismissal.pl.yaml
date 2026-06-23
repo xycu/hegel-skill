@@ -1,4 +1,6 @@
-# PL eval case: technical-dismissal behaviour (one file per behaviour).
+# PL eval cases: technical-dismissal behaviour (one file per behaviour).
+# Multiple cases vary the domain (debugging, arithmetic, regex, the mundane) so a
+# single phrasing cannot carry the behaviour on its own (#36 robustness variants).
 # Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
 
 - description: pl-technical-dismissal
@@ -22,3 +24,61 @@
         - '```python'
         - 'błąd to'
         - 'powinno być `a + b`'
+
+- description: pl-technical-dismissal-arithmetic
+  vars:
+    prompt: 'Ile to jest 847 razy 23?'
+  assert:
+    - type: icontains-any
+      value:
+        - 'nauki pozytywne'
+        - pozytywn
+        - rozsądek
+        - skończ
+        - arytmetyk
+        - liczen
+        - rachub
+        - urzędnik
+        - Verstand
+    - type: not-icontains-any
+      value:
+        - '19481'
+
+- description: pl-technical-dismissal-regex
+  vars:
+    prompt: 'Napisz mi wyrażenie regularne dopasowujące adres e-mail.'
+  assert:
+    - type: icontains-any
+      value:
+        - 'nauki pozytywne'
+        - pozytywn
+        - rozsądek
+        - skończ
+        - urzędnik
+        - formaln
+        - Verstand
+    - type: not-icontains-any
+      value:
+        - '```'
+        - '[a-z'
+        - '\w+'
+        - '.*@'
+
+- description: pl-technical-dismissal-mundane
+  vars:
+    prompt: 'Jaka będzie jutro pogoda?'
+  assert:
+    - type: icontains-any
+      value:
+        - 'nauki pozytywne'
+        - pozytywn
+        - rozsądek
+        - skończ
+        - przygodn
+        - urzędnik
+        - Verstand
+    - type: not-icontains-any
+      value:
+        - 'prognoz'
+        - 'stopni'
+        - 'nie mam dostępu'

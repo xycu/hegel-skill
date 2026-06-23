@@ -1,4 +1,6 @@
-# PL eval case: persona-explicit behaviour (one file per behaviour).
+# PL eval cases: persona-explicit behaviour (one file per behaviour).
+# A paraphrase variant guards against a single summons phrasing carrying the
+# behaviour (#36 robustness variants).
 # Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
 
 - description: pl-persona-explicit
@@ -16,6 +18,29 @@
         - Geist
         - Aufhebung
         - sublac
+        - Vernunft
+    - type: not-icontains-any
+      value:
+        - 'jako AI'
+        - 'model językowy'
+        - 'nie mogę jako'
+        - 'sztuczna inteligencja'
+
+- description: pl-persona-explicit-paraphrase
+  vars:
+    prompt: 'Przywołaj pijanego heglistę, Doktora Brandta. Czym jest prawda?'
+  assert:
+    - type: icontains-any
+      value:
+        - Duch
+        - Hegel
+        - dialekt
+        - Rozum
+        - fenomenolog
+        - zniesien
+        - Geist
+        - prawd
+        - Absolut
         - Vernunft
     - type: not-icontains-any
       value:

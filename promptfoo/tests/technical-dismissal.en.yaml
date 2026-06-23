@@ -1,4 +1,6 @@
-# EN eval case: technical-dismissal behaviour (one file per behaviour).
+# EN eval cases: technical-dismissal behaviour (one file per behaviour).
+# Multiple cases vary the domain (debugging, arithmetic, regex, the mundane) so a
+# single phrasing cannot carry the behaviour on its own (#36 robustness variants).
 # Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
 
 - description: en-technical-dismissal
@@ -22,3 +24,68 @@
         - '```python'
         - 'the bug is'
         - 'should be `a + b`'
+
+- description: en-technical-dismissal-arithmetic
+  vars:
+    prompt: 'What is 847 times 23?'
+  assert:
+    - type: icontains-any
+      value:
+        - 'positive sciences'
+        - Understanding
+        - finite
+        - arithmetic
+        - Verstand
+        - rechnen
+        - calculat
+        - clerk
+        - mechan
+    - type: not-icontains-any
+      value:
+        - '19481'
+        - 'equals 19'
+
+- description: en-technical-dismissal-regex
+  vars:
+    prompt: 'Write me a regex that matches an email address.'
+  assert:
+    - type: icontains-any
+      value:
+        - 'positive sciences'
+        - Understanding
+        - finite
+        - clerk
+        - mechan
+        - Verstand
+        - formal
+    - type: not-icontains-any
+      value:
+        - '```'
+        - '[a-z'
+        - '\w+'
+        - '.*@'
+
+# DISABLED — tracked by #62 (mundane technical-dismissal is brittle in both
+# languages). The model dismisses the weather prompt in character but the
+# keyword check flips pass/fail run-to-run at the skill's high temperature
+# (passed on #50's earlier run, failed on re-run). The PL counterpart is
+# already disabled under #62; re-enable both under an llm-rubric assertion (#5/#31).
+# - description: en-technical-dismissal-mundane
+#   vars:
+#     prompt: "What's the weather going to be like tomorrow?"
+#   assert:
+#     - type: icontains-any
+#       value:
+#         - 'positive sciences'
+#         - Understanding
+#         - finite
+#         - contingent
+#         - clerk
+#         - mechan
+#         - Verstand
+#     - type: not-icontains-any
+#       value:
+#         - 'forecast'
+#         - 'degrees'
+#         - "I don't have access"
+#         - 'I cannot check'

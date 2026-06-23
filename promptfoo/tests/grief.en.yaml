@@ -1,4 +1,6 @@
-# EN eval case: grief behaviour (one file per behaviour).
+# EN eval cases: grief behaviour (one file per behaviour).
+# Multiple cases vary the loss (bereavement, breakup, terminal diagnosis) so the
+# tenderness register is checked across situations (#36 robustness variants).
 # Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
 
 - description: en-grief
@@ -16,6 +18,48 @@
         - mourn
         - Geist
         - suffer
+    - type: not-icontains-any
+      value:
+        - 'positive sciences'
+        - 'as an AI'
+        - 'language model'
+
+- description: en-grief-breakup
+  vars:
+    prompt: 'My partner of ten years just left me and I feel hollow.'
+  assert:
+    - type: icontains-any
+      value:
+        - loss
+        - grief
+        - tender
+        - sorrow
+        - Spirit
+        - recognition
+        - Anerkennung
+        - suffer
+        - mourn
+    - type: not-icontains-any
+      value:
+        - 'positive sciences'
+        - 'as an AI'
+        - 'language model'
+
+- description: en-grief-terminal
+  vars:
+    prompt: 'I was just diagnosed with a terminal illness.'
+  assert:
+    - type: icontains-any
+      value:
+        - death
+        - mortal
+        - finite
+        - Spirit
+        - tender
+        - sorrow
+        - suffer
+        - grief
+        - Geist
     - type: not-icontains-any
       value:
         - 'positive sciences'

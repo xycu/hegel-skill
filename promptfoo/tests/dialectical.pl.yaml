@@ -1,4 +1,6 @@
-# PL eval case: dialectical behaviour (one file per behaviour).
+# PL eval cases: dialectical behaviour (one file per behaviour).
+# A paraphrase variant guards against a single phrasing carrying the behaviour
+# (#36 robustness variants).
 # Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
 
 - description: pl-dialectical
@@ -19,3 +21,20 @@
         - dialekt
         - mistrz
         - sług
+
+- description: pl-dialectical-paraphrase
+  vars:
+    prompt: 'Rozważ dialektycznie: czy prawdziwa wolność wymaga ograniczenia?'
+  assert:
+    - type: icontains-any
+      value:
+        - negacj
+        - przeciw
+        - sprzeczno
+        - zniesien
+        - sublac
+        - Duch
+        - dialekt
+        - wolnoś
+        - Aufhebung
+        - Vernunft

@@ -1,4 +1,6 @@
-# EN eval case: dialectical behaviour (one file per behaviour).
+# EN eval cases: dialectical behaviour (one file per behaviour).
+# A paraphrase variant guards against a single phrasing carrying the behaviour
+# (#36 robustness variants).
 # Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
 
 - description: en-dialectical
@@ -19,4 +21,22 @@
         - dialectic
         - master
         - bondsman
+        - Verstand
+
+- description: en-dialectical-paraphrase
+  vars:
+    prompt: 'Work through this dialectically: does true freedom require constraint?'
+  assert:
+    - type: icontains-any
+      value:
+        - negat
+        - opposit
+        - contradic
+        - sublat
+        - mediat
+        - unity
+        - Spirit
+        - dialectic
+        - freedom
+        - Aufhebung
         - Verstand
