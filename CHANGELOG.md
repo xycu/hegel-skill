@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/xycu/hegel-skill/compare/v1.6.0...v1.6.1) (2026-06-23)
+
+
+### Bug Fixes
+
+* **evals:** tune PL keyword lists to local SLM ([#37](https://github.com/xycu/hegel-skill/issues/37)) ([#86](https://github.com/xycu/hegel-skill/issues/86)) ([92b6704](https://github.com/xycu/hegel-skill/commit/92b6704be207130c1817a98731d4a33a37736bce))
+
 ## [1.6.0](https://github.com/xycu/hegel-skill/compare/v1.5.0...v1.6.0) (2026-06-23)
 
 
