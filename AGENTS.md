@@ -57,8 +57,11 @@ shorter human-facing entry point that summarizes the essentials and links back h
   already required and green.
 - **Skill CI runs in reviewed-PR mode.** Every eval job `needs:` a `gate` job bound to
   the **`evals` environment**, so a run sits *"Waiting for review"* and **no runner
-  starts until approved** (one approval releases the whole run). Self-approve is allowed
-  (PR → Checks → *Review deployments* → tick `evals` → *Approve and deploy*). It is
+  starts until approved** (one approval releases the whole run). Self-approve is allowed —
+  but **via the deployment gate, not a PR review**: PR → Checks → *Review deployments* →
+  tick `evals` → *Approve and deploy*. (The PR *Files changed → Approve* button is a
+  different thing GitHub never lets an author press — and it isn't needed: `main` requires
+  zero PR-review approvals, only this deployment gate.) It is
   **PR-only** (+ `workflow_dispatch`); the push-to-`main` trigger was removed so eval
   minutes aren't spent on every commit. **Don't cancel a run that's still "Waiting for
   review"** — a cancelled job renders as a red ❌ on the PR (purely cosmetic, but it
