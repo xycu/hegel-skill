@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/xycu/hegel-skill/compare/v1.5.0...v1.6.0) (2026-06-23)
+
+
+### Features
+
+* **evals:** add robustness variants to the existing behaviours ([#36](https://github.com/xycu/hegel-skill/issues/36)) ([#50](https://github.com/xycu/hegel-skill/issues/50)) ([effa513](https://github.com/xycu/hegel-skill/commit/effa513ebd30fc8baf7b37e444950914d237b429))
+
 ## [1.5.0](https://github.com/xycu/hegel-skill/compare/v1.4.0...v1.5.0) (2026-06-23)
 
 
