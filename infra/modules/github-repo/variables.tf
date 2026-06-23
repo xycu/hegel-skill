@@ -19,11 +19,6 @@ variable "runner_service_account" {
   type        = string
 }
 
-variable "eval_job_name" {
-  description = "Cloud Run eval job name (exposed to CI as a repo variable)."
-  type        = string
-}
-
 variable "region" {
   description = "GCP region (exposed to CI as a repo variable)."
   type        = string

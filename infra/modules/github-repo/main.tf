@@ -58,12 +58,6 @@ resource "github_actions_variable" "service_account" {
   value         = var.runner_service_account
 }
 
-resource "github_actions_variable" "eval_job" {
-  repository    = var.repository
-  variable_name = "EVAL_JOB_NAME"
-  value         = var.eval_job_name
-}
-
 resource "github_actions_variable" "region" {
   repository    = var.repository
   variable_name = "GCP_REGION"

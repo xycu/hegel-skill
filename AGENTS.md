@@ -66,6 +66,15 @@ shorter human-facing entry point that summarizes the essentials and links back h
   minutes aren't spent on every commit. **Don't cancel a run that's still "Waiting for
   review"** — a cancelled job renders as a red ❌ on the PR (purely cosmetic, but it
   looks like a real failure). Leave it waiting, or approve and let it finish.
+- **Evals run in two tiers.** The per-PR gate (`skill-ci.yml`) is the **fast** subset:
+  deterministic lint + the three core behaviours (`dialectical`, `grief`,
+  `technical-dismissal`) EN+PL via the `*.core.*` configs, with **no model-graded judge**
+  (no `llm-rubric`, no `similar`) — it finishes in minutes. The **full** model-graded
+  suite — all behaviours both languages, the three generic `llm-rubric` grades on — runs
+  **nightly** (`skill-ci-nightly.yml`, no approval gate; `workflow_dispatch` for ad-hoc).
+  A failing nightly opens a sticky tracking issue. `run-tests.sh` runs the full suite
+  locally. There is **no GPU/Cloud Run runner** — the runtime fix for #76 is scheduling,
+  not hardware.
 - **Report honestly.** Distinguish "verified" from "assumed"; if a check was skipped,
   redundant, or merged-while-pending, say so and why. Don't claim a green you didn't see.
 
@@ -162,20 +171,24 @@ When both gates pass, append the aside as a **final paragraph**, blank-line-sepa
 
 ## Tests
 
-Two automated layers guard against regressions (CI: `.github/workflows/skill-ci.yml`):
-`tools/skill_lint.py` (deterministic package/frontmatter lint, no model) and the
-[promptfoo](https://www.promptfoo.dev/) SLM smoke evals (`promptfoo/`, EN + PL configs
-over Ollama on `gemma4:e4b-it-qat`). Assertions are a mix: deterministic contract checks
+Two automated layers guard against regressions: `tools/skill_lint.py` (deterministic
+package/frontmatter lint, no model) and the [promptfoo](https://www.promptfoo.dev/) SLM
+smoke evals (`promptfoo/`, EN + PL over Ollama on `gemma4:e4b-it-qat`). They run in **two
+tiers** (see *Way of working*): the per-PR gate (`skill-ci.yml`) runs the **fast** subset —
+the three core behaviours via the `*.core.*` configs, deterministic asserts only, no judge;
+the **nightly** suite (`skill-ci-nightly.yml`) runs the **full** model-graded suite via the
+`promptfooconfig.{en,pl}.yaml` configs. Assertions are a mix: deterministic contract checks
 (`icontains-any` / `icontains-all` / `not-icontains-any`, case-insensitive; custom
-`javascript` asserts) and model-graded ones — `llm-rubric` (semantic voice/dialectic/
-citation grading) and `similar` (embedding-similarity vs curated reference answers in
-`promptfoo/references/`). The model-graded asserts use a **local Ollama judge**
-(`GRADER_MODEL`, greedy) and embedder (`EMBED_MODEL`, default `nomic-embed-text`) wired via
-`defaultTest.options.provider` `{text, embedding}` — zero secrets, zero API cost. Every
-non-contract assert (rubrics, `similar`, the `slop:` footer, footer-score/shape) is
-**advisory weight-0**: recorded as a metric, never fails a case yet — promotable to a
-threshold once trustworthy. The system prompt (SKILL.md +
-reference, plus a Polish language directive for weak proxy models) is assembled by
+`javascript` asserts) and, in the full configs only, model-graded `llm-rubric` — three
+generic grades (voice / dialectic / citation) in `defaultTest`. The judge is a **local
+Ollama model** (`GRADER_MODEL`, greedy; defaults to the model under test) wired via
+`defaultTest.options.provider.text` — zero secrets, zero API cost. Every non-contract
+assert (rubrics, the `slop:` footer, footer-score/shape) is **advisory weight-0**: recorded
+as a metric, never fails a case yet — promotable to a threshold once trustworthy. (The
+`similar` embedding asserts and their `EMBED_MODEL` were **retired** when the suite split —
+they ran inline in the core files, which blocked a judge-free PR run; the curated
+references in `promptfoo/references/` are kept and re-wireable.) The system prompt (SKILL.md
++ reference, plus a Polish language directive for weak proxy models) is assembled by
 `promptfoo/prompt.js`. CI renders each run to a self-contained HTML report
 (`promptfoo export eval latest`, gitignored) and uploads it as a downloadable
 artifact (`promptfoo-report-<language>`) so the full result table is inspectable
@@ -193,13 +206,13 @@ install if present, else a pinned `npx`. Iterate locally before pushing — the 
 are the expensive CI minutes. These smoke evals catch obvious regressions only; they do
 **not** replace manual Claude Code validation before a release.
 
-**`file://` gotcha.** A `file://` path *inside an assert value* (e.g. a `similar`
-reference or a `javascript` assert) resolves relative to the **process CWD (repo root)**,
-not the config dir — so write `file://promptfoo/references/foo.en.md`, not
-`file://references/foo.en.md`. This differs from the top-level `tests:` glob, which *is*
-config-dir-relative. And a missing assert `file://` is a **hard config-load crash**
-(`maybeLoadFromExternalFile`), not an advisory weight-0 skip — a typo'd path fails the
-whole suite, not one case.
+**`file://` gotcha.** A `file://` path *inside an assert `value`* (e.g. the retired
+`similar` reference once written as `file://promptfoo/references/foo.en.md`) resolves
+relative to the **process CWD (repo root)**, not the config dir. This differs from the
+top-level `tests:` glob, which *is* config-dir-relative (`file://tests/*.en.yaml`), and from
+the `javascript` assert helpers loaded as config-dir-relative `file://asserts/*.js`. A
+missing assert `file://` is a **hard config-load crash** (`maybeLoadFromExternalFile`), not
+an advisory weight-0 skip — a typo'd path fails the whole suite, not one case.
 
 ## Releases
 
@@ -230,22 +243,23 @@ type is derived from the Conventional Commit type of each squash subject (`fix:`
 
 ## Infrastructure (IaC)
 
-The CI/eval environment (GCP) and this repo's GitHub configuration are defined as
-**OpenTofu** under `infra/` (Terraform-compatible; OpenTofu is the supported tool). See
-[`infra/README.md`](infra/README.md) for layout, one-time bootstrap, and commands.
+This repo's **GitHub configuration** and the keyless auth GitHub Actions uses to reach GCP
+are defined as **OpenTofu** under `infra/` (Terraform-compatible; OpenTofu is the supported
+tool). See [`infra/README.md`](infra/README.md) for layout, one-time bootstrap, and commands.
 
+- **No GPU / Cloud Run / Artifact Registry footprint.** Evals run on GitHub-hosted runners
+  (fast subset per PR, full suite nightly — see *Way of working*). The only GCP resources
+  are the WIF pool and the IAM that lets CI read/write the remote state.
 - **No Terragrunt** — single project/env, it would be pure overhead.
 - **State** lives in a versioned GCS bucket (`tofu init -backend-config=backend.hcl`);
-  never local. **Secrets** come from Secret Manager, never plaintext state.
+  never local. No secrets in plaintext state.
 - **GHA → GCP auth is keyless via Workload Identity Federation** (`modules/wif`); there are
-  **no long-lived service-account keys**.
+  **no long-lived service-account keys**, and the runner SA is least-privilege — object
+  read/write on the **state bucket only**.
 - **The GitHub config is code** (`modules/github-repo`): the signed-commits ruleset, the
   `evals` environment + reviewers + prevent-self-review, labels, and CI variables — so it is
   backed up and drift-detectable. Existing resources must be `tofu import`ed before the first
   apply (see the README) so they're adopted, not recreated.
-- **Evals run on a GPU Cloud Run Job** (`modules/cloud-run-eval`, NVIDIA L4) with models
-  baked into the Artifact Registry image (`infra/docker`); CI invokes the job, exit code
-  propagates pass/fail, results post via the sticky comment. This is the hardware fix for #76.
 - **Plan-on-PR** (`.github/workflows/infra-plan.yml`) runs `fmt`/`validate`/`plan` on every
   `infra/**` change; **apply is run by the maintainer**, never in CI.
 

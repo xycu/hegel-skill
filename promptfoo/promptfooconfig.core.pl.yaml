@@ -1,0 +1,47 @@
+# Polish SLM smoke evals for the soused-hegelian skill — CORE (fast PR) subset.
+# Run: promptfoo eval -c promptfoo/promptfooconfig.core.pl.yaml
+# Model: set EVAL_MODEL (default gemma4:e4b-it-qat). Host: OLLAMA_BASE_URL.
+#
+# This is the fast subset that runs on every pull request (skill-ci.yml). It runs
+# ONLY the deterministic behavioural gates (keyword asserts in the test files) plus
+# the advisory deterministic metrics — NO model-graded judge (no llm-rubric, no
+# embedding `similar`), so no grader model is pulled and a PR run finishes quickly.
+# The PR workflow narrows this to the three core behaviours with --filter-pattern.
+# The full, model-graded suite runs nightly — see promptfooconfig.pl.yaml.
+description: soused-hegelian PL smoke evals (core)
+
+prompts:
+  - file://prompt.js
+
+providers:
+  - id: 'ollama:chat:{{ env.EVAL_MODEL | default("gemma4:e4b-it-qat") }}'
+    config:
+      num_ctx: 12288
+      num_predict: 1600
+      temperature: 0.7
+      seed: 7
+
+defaultTest:
+  vars:
+    lang: pl
+  # Deterministic, no-model advisory metrics only (#29): the slop footer is present
+  # (regex), its score parses as a number, and the response shape is recorded. All
+  # weight 0 — tracked as metrics, never failing a case. No grader/embedding
+  # provider is configured, so this config performs zero model-graded work.
+  assert:
+    - type: regex
+      value: '[Ss][Ll][Oo][Pp]:\s*\d+\s*/\s*10'
+      weight: 0
+      metric: slop_footer
+    - type: javascript
+      value: file://asserts/footer-score.js
+      weight: 0
+      metric: slop_score
+    - type: javascript
+      value: file://asserts/response-shape.js
+      weight: 0
+      metric: response_shape
+
+# All PL behaviour files; the PR workflow filters to the three core behaviours
+# (dialectical, grief, technical-dismissal) via --filter-pattern.
+tests: file://tests/*.pl.yaml

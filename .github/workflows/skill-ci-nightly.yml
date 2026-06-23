@@ -1,0 +1,186 @@
+name: Skill CI (nightly full suite)
+
+on:
+  # The full, model-graded eval suite: ALL behaviours (core + the restored cases)
+  # EN+PL with the llm-rubric judge ON. It runs on a schedule where wall-clock time
+  # is free, so the runtime that once blew the 90-minute PR envelope (#76) is fine
+  # here. No manual approval gate — there is no PR to approve; a maintainer triggers
+  # ad-hoc runs with workflow_dispatch. Per-PR runs use the fast subset (skill-ci.yml).
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: skill-ci-nightly
+  cancel-in-progress: false
+
+env:
+  PROMPTFOO_VERSION: "0.121.17"
+
+jobs:
+  full-slm-suite:
+    name: Full SLM suite (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    # The full graded suite is long; give it generous head-room. Nightly, so a long
+    # wall-clock is acceptable.
+    timeout-minutes: 330
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: en
+            display: English
+            model: gemma4:e4b-it-qat
+            config: promptfoo/promptfooconfig.en.yaml
+          - language: pl
+            display: Polish
+            model: gemma4:e4b-it-qat
+            config: promptfoo/promptfooconfig.pl.yaml
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Install promptfoo
+        run: npm install -g promptfoo@"${PROMPTFOO_VERSION}"
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+      - name: Start Ollama server
+        run: |
+          if ! curl -sf http://localhost:11434/api/tags >/dev/null 2>&1; then
+            ollama serve &
+          fi
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:11434/api/tags >/dev/null && break
+            sleep 1
+          done
+      - name: Pull model
+        # Model under test, which is also the default llm-rubric grader
+        # (GRADER_MODEL defaults to EVAL_MODEL), so a single pull covers both.
+        run: ollama pull ${{ matrix.model }}
+      # Full graded run: every behaviour for the language, llm-rubric judge on.
+      # `-j 1` so the single CPU-bound Ollama serves generations and judge calls
+      # serially without starving (#47). `promptfoo eval` exits non-zero on any
+      # non-pass; the blocking keyword gates therefore fail the run.
+      - name: Run full eval suite
+        env:
+          EVAL_MODEL: ${{ matrix.model }}
+          REQUEST_TIMEOUT_MS: "600000"
+        run: promptfoo eval -c ${{ matrix.config }} --no-cache -j 1
+      - name: Render HTML report
+        if: always()
+        run: promptfoo export eval latest -o promptfoo-report-${{ matrix.language }}.html
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: promptfoo-report-${{ matrix.language }}
+          path: promptfoo-report-${{ matrix.language }}.html
+          if-no-files-found: warn
+      - name: Summarize result
+        if: always()
+        env:
+          DISPLAY: ${{ matrix.display }}
+          MODEL: ${{ matrix.model }}
+        run: |
+          if promptfoo export eval latest -o eval.json 2>/dev/null; then
+            passes=$(jq '.results.stats.successes // 0' eval.json)
+            failures=$(jq '.results.stats.failures // 0' eval.json)
+            errors=$(jq '.results.stats.errors // 0' eval.json)
+          else
+            passes=0; failures=0; errors=0
+          fi
+          total=$((passes + failures + errors))
+          jq -n \
+            --arg label "$DISPLAY" --arg model "$MODEL" \
+            --argjson passes "$passes" --argjson failures "$failures" \
+            --argjson errors "$errors" --argjson total "$total" \
+            '{label:$label, model:$model, passes:$passes, failures:$failures, errors:$errors, total:$total}' \
+            | tee "summary-${{ matrix.language }}.json"
+      - name: Upload result summary
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: eval-summary-${{ matrix.language }}
+          path: summary-${{ matrix.language }}.json
+          if-no-files-found: warn
+
+  # Surface the nightly outcome where a maintainer sees it without opening job logs:
+  # a job-summary table on the run, and — only on failure — a sticky tracking issue.
+  report:
+    name: Nightly report
+    runs-on: ubuntu-latest
+    needs: full-slm-suite
+    if: ${{ always() }}
+    permissions:
+      contents: read
+      issues: write  # open / update the failure tracking issue
+    steps:
+      - name: Download result summaries
+        continue-on-error: true
+        uses: actions/download-artifact@v7
+        with:
+          pattern: eval-summary-*
+          merge-multiple: true
+          path: summaries
+      - name: Build table, write job summary, manage tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(summaries/*.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            table="_No eval summaries were produced — the suite likely failed before running. See the [workflow run]($RUN_URL)._"
+            overall='fail'
+          else
+            arr=$(jq -s 'sort_by(.label)' "${files[@]}")
+            rows=$(jq -r '
+              def passed: .total > 0 and .failures == 0 and .errors == 0;
+              .[] |
+              (if passed then "✅ pass" else "❌ fail" end) as $res |
+              (.model | split("/") | last) as $model |
+              (if .errors > 0 then " (\(.errors) err)" else "" end) as $err |
+              "| \(.label) | `\($model)` | \($res) | \(.passes)/\(.total)\($err) |"
+            ' <<<"$arr")
+            table=$(printf '| Suite | Model | Result | Cases |\n|---|---|---|---|\n%s' "$rows")
+            if jq -e 'def passed: .total > 0 and .failures == 0 and .errors == 0;
+                      all(.[]; passed)' <<<"$arr" >/dev/null; then
+              overall='pass'
+            else
+              overall='fail'
+            fi
+          fi
+
+          # Job summary on the run itself.
+          {
+            printf '### 🌙 Nightly full SLM suite — %s\n\n' "$overall"
+            printf 'All behaviours EN+PL, model-graded (llm-rubric on).\n\n'
+            printf '%s\n' "$table"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Sticky failure tracking issue: open on failure, close on recovery.
+          marker='<!-- nightly-eval-status -->'
+          title='Nightly full eval suite is failing'
+          existing=$(gh issue list --repo "$REPO" --state open --search "$marker in:body" \
+            --json number --jq '.[0].number // empty')
+          if [ "$overall" = "fail" ]; then
+            body=$(printf '%s\nThe nightly full SLM eval suite failed.\n\n%s\n\nLatest run: %s\n' "$marker" "$table" "$RUN_URL")
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --repo "$REPO" --body "$body"
+            else
+              gh issue create --repo "$REPO" --title "$title" --body "$body" --label "in progress" || \
+                gh issue create --repo "$REPO" --title "$title" --body "$body"
+            fi
+            echo "Nightly suite failing — exiting non-zero so the run is marked failed."
+            exit 1
+          else
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --repo "$REPO" --body "$marker"$'\n'"Nightly suite is green again ($RUN_URL). Closing."
+              gh issue close "$existing" --repo "$REPO"
+            fi
+          fi

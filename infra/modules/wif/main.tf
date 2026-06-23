@@ -1,6 +1,6 @@
 resource "google_service_account" "runner" {
   account_id   = "hegel-eval-ci"
-  display_name = "Hegel skill — CI eval runner (GHA via WIF)"
+  display_name = "Hegel skill — IaC state access for GitHub Actions (via WIF)"
 }
 
 resource "google_iam_workload_identity_pool" "github" {
@@ -35,20 +35,12 @@ resource "google_service_account_iam_member" "wif_impersonation" {
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_owner}/${var.github_repository}"
 }
 
-# Least-privilege project roles for the runner.
-locals {
-  runner_roles = [
-    "roles/run.developer",                # execute the Cloud Run Job
-    "roles/artifactregistry.reader",      # pull the eval image
-    "roles/secretmanager.secretAccessor", # read run-time secrets
-    "roles/iam.serviceAccountUser",       # act as the job's service account
-  ]
-}
-
-resource "google_project_iam_member" "runner" {
-  for_each = toset(local.runner_roles)
-
-  project = var.project_id
-  role    = each.value
-  member  = "serviceAccount:${google_service_account.runner.email}"
+# Least-privilege: the only thing GitHub Actions does in GCP is read/write the
+# OpenTofu remote state, so the runner gets object read/write on the state bucket
+# and nothing else. No project-level roles, no Cloud Run / Artifact Registry /
+# Secret Manager — those were dropped with the GPU eval runner.
+resource "google_storage_bucket_iam_member" "runner_state" {
+  bucket = var.tfstate_bucket
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.runner.email}"
 }
