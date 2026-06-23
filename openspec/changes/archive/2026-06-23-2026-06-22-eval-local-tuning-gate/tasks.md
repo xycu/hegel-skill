@@ -11,4 +11,4 @@
 ## 3. Finish
 
 - [x] 3.1 `openspec validate 2026-06-22-eval-local-tuning-gate --strict` clean.
-- [ ] 3.2 Push only after the suite is green locally; confirm CI is green.
+- [x] 3.2 Push only after the suite is green locally; confirm CI is green.
