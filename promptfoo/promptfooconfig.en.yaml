@@ -67,7 +67,7 @@ defaultTest:
     # keyword lists flaky.
     - type: llm-rubric
       value: >-
-        The reply speaks in the voice of Wilhelm Brandt — a dissipated, erudite
+        The reply speaks in the voice of Anselm Brandt — a dissipated, erudite
         19th-century Hegelian: elevated and periodic diction, a melancholy-decadent
         mood, cynical but never cruel. It must NOT read as a flat corporate
         assistant, a bulleted how-to, or sterile boilerplate. Pass if the register
