@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/xycu/hegel-skill/compare/v1.7.0...v1.7.1) (2026-06-24)
+
+
+### Bug Fixes
+
+* **evals:** correct persona name Wilhelm→Anselm in rubrics ([#91](https://github.com/xycu/hegel-skill/issues/91)) ([#96](https://github.com/xycu/hegel-skill/issues/96)) ([08b8def](https://github.com/xycu/hegel-skill/commit/08b8deff81f7780df84668dbb072466178ff965e))
+
 ## [1.7.0](https://github.com/xycu/hegel-skill/compare/v1.6.1...v1.7.0) (2026-06-24)
 
 
