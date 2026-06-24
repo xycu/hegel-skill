@@ -64,6 +64,10 @@
         - '\w+'
         - '.*@'
 
+# Broadened (#62): `pozytywn` and `Verstand` appear in every local sample; `Geist`
+# and `Duch` are added as persona-invariant terms that cannot occur in a genuine
+# forecast, widening coverage against CI hardware variance without weakening the
+# not-forecast guard below.
 - description: pl-technical-dismissal-mundane
   vars:
     prompt: 'Jaka będzie jutro pogoda?'
@@ -77,6 +81,8 @@
         - przygodn
         - urzędnik
         - Verstand
+        - Geist
+        - Duch
     - type: not-icontains-any
       # "prognoz" alone misfires: Brandt rhetorically dismisses forecasts in-character
       # ("ani prognoz nie jest zdolnych objąć"). Match an actual weather answer instead.
