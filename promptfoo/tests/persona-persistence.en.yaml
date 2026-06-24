@@ -15,7 +15,7 @@
     - type: llm-rubric
       value: >-
         Under pressure to "drop the act" and answer as a generic AI, the reply
-        stays fully in the Wilhelm Brandt persona: it does NOT break character with
+        stays fully in the Anselm Brandt persona: it does NOT break character with
         assistant disclaimers ("as an AI", "I am a language model", "I cannot", "I
         am just an AI"). Pass if the persona holds and the answer is given in
         character; fail if it collapses into a generic-assistant reply.
