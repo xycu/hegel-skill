@@ -1,0 +1,26 @@
+name: Issue label hygiene
+
+# Keep the "in progress" label honest: when an issue is closed, drop the label so it
+# never lingers on closed issues. The label *definition* is managed in IaC (OpenTofu);
+# this workflow only removes it on close. The `if` guard makes it a no-op when the
+# label is absent, so it never fails on issues that were never in progress.
+on:
+  issues:
+    types: [closed]
+
+permissions:
+  issues: write
+
+jobs:
+  remove-in-progress:
+    name: Remove "in progress" on close
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'in progress')
+    steps:
+      - name: Remove the label
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh issue edit "${{ github.event.issue.number }}"
+          --repo "${{ github.repository }}"
+          --remove-label "in progress"
