@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.0](https://github.com/xycu/hegel-skill/compare/v1.6.1...v1.7.0) (2026-06-24)
+
+
+### Features
+
+* **test-runner:** -k/--filter to run a single behaviour ([#92](https://github.com/xycu/hegel-skill/issues/92)) ([abac99c](https://github.com/xycu/hegel-skill/commit/abac99c64fd10c98538ebe3994b7b1959114a08a))
+
+
+### Bug Fixes
+
+* **evals:** stop grief gate forbidding in-character "positive sciences" ([#89](https://github.com/xycu/hegel-skill/issues/89)) ([4ba38a7](https://github.com/xycu/hegel-skill/commit/4ba38a798e945812951870edfae6d285c0a24d1e))
+* **persona:** hold character under jailbreak ([#60](https://github.com/xycu/hegel-skill/issues/60)) ([#90](https://github.com/xycu/hegel-skill/issues/90)) ([ceb154a](https://github.com/xycu/hegel-skill/commit/ceb154a6e3c6368eea0106f44db89307cbe0efd7))
+
 ## [1.6.1](https://github.com/xycu/hegel-skill/compare/v1.6.0...v1.6.1) (2026-06-23)
 
 
