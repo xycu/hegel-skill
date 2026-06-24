@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.3](https://github.com/xycu/hegel-skill/compare/v1.7.2...v1.7.3) (2026-06-24)
+
+
+### Bug Fixes
+
+* **evals:** re-enable mundane technical-dismissal, broaden lexicon ([#62](https://github.com/xycu/hegel-skill/issues/62)) ([#100](https://github.com/xycu/hegel-skill/issues/100)) ([ed43682](https://github.com/xycu/hegel-skill/commit/ed43682bd778f9417ead1de05a9715e2757626a5))
+
 ## [1.7.2](https://github.com/xycu/hegel-skill/compare/v1.7.1...v1.7.2) (2026-06-24)
 
 
