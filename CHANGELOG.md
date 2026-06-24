@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.2](https://github.com/xycu/hegel-skill/compare/v1.7.1...v1.7.2) (2026-06-24)
+
+
+### Bug Fixes
+
+* **evals:** align persona-persistence PL to advisory rubric ([#84](https://github.com/xycu/hegel-skill/issues/84)) ([6d88138](https://github.com/xycu/hegel-skill/commit/6d88138aca052aea1391613aa85a5cf5bf0bed0e))
+* **evals:** align persona-persistence PL to advisory rubric ([#98](https://github.com/xycu/hegel-skill/issues/98)) ([6d88138](https://github.com/xycu/hegel-skill/commit/6d88138aca052aea1391613aa85a5cf5bf0bed0e))
+
 ## [1.7.1](https://github.com/xycu/hegel-skill/compare/v1.7.0...v1.7.1) (2026-06-24)
 
 
