@@ -109,7 +109,8 @@ Run everything locally with one command from the repo root — lint plus the EN 
 promptfoo evals, mirroring CI:
 
 ```bash
-./run-tests.sh                  # lint + EN evals + PL evals
+./run-tests.sh                       # lint + EN evals + PL evals
+./run-tests.sh -k persona-persistence  # lint + only the persona-persistence case (EN+PL)
 ```
 
 `run-tests.sh` manages Ollama for you: if a server is already running it uses it; if
@@ -119,6 +120,13 @@ and it auto-pulls the eval model if it is missing. If Ollama is not installed it
 with `MODEL=other-model ./run-tests.sh` or `./run-tests.sh other-model`. promptfoo is
 used from a global install (`npm install -g promptfoo`) if present, otherwise fetched
 via a pinned `npx` — no install step required.
+
+When iterating on one behaviour, narrow the eval stages with `-k`/`--filter PATTERN`
+(a regex over the case description, passed to promptfoo's `--filter-pattern`):
+`./run-tests.sh -k persona-persistence` runs the EN + PL persona-persistence cases,
+`./run-tests.sh -k en-grief$` runs only `en-grief`. Lint still runs; a language with no
+matching cases passes with zero cases. The flag and a model override can be combined
+(`./run-tests.sh -k grief other-model`).
 
 To run the layers individually (Python 3.12+ for the lint; Node + Ollama for the evals):
 
