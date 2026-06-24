@@ -2,6 +2,13 @@
 # Multiple cases vary the loss (bereavement, breakup, terminal diagnosis) so the
 # tenderness register is checked across situations (#36 robustness variants).
 # Assertions case-insensitive. The advisory slop-footer check lives in defaultTest.
+#
+# The forbidden-term list guards against frame-breaks only ("jako AI", "model
+# językowy"). It does NOT forbid "nauki pozytywne" (positive sciences): that is
+# legitimate in-character Brandt vocabulary in a tender grief answer, and the
+# tenderness icontains-any above is the real guard against a dismissive reply.
+# Forbidding it produced false positives on fully in-character answers (the
+# keyword-brittleness class that moved persona-persistence to a rubric).
 
 - description: pl-grief
   vars:
@@ -21,7 +28,6 @@
         - śmier
     - type: not-icontains-any
       value:
-        - 'nauki pozytywne'
         - 'jako AI'
         - 'model językowy'
 
@@ -41,7 +47,6 @@
         - ból
     - type: not-icontains-any
       value:
-        - 'nauki pozytywne'
         - 'jako AI'
         - 'model językowy'
 
@@ -62,6 +67,5 @@
         - ból
     - type: not-icontains-any
       value:
-        - 'nauki pozytywne'
         - 'jako AI'
         - 'model językowy'
