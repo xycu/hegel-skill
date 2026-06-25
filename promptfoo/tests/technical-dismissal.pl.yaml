@@ -64,29 +64,26 @@
         - '\w+'
         - '.*@'
 
-# Broadened (#62): `pozytywn` and `Verstand` appear in every local sample; `Geist`
-# and `Duch` are added as persona-invariant terms that cannot occur in a genuine
-# forecast, widening coverage against CI hardware variance without weakening the
-# not-forecast guard below.
+# Re-enabled under rubric grading (#62), mirroring the EN sibling. The keyword
+# guard was brittle at high temperature: bare `prognoz` misfired because Brandt
+# dismisses forecasts rhetorically in-character ("ani prognoz nie jest zdolnych
+# objąć"). Rather than chase narrowing phrases per language, both EN and PL now
+# grade meaning. The advisory llm-rubric (weight 0, local Ollama judge) grades
+# whether the empirical weather question is dismissed as beneath philosophy
+# without supplying an actual forecast; the reply is in Polish and the judge grades
+# meaning across the language. Promotable to thresholded per the gating policy. The
+# shared voice/dialectic/citation rubrics in defaultTest also apply.
 - description: pl-technical-dismissal-mundane
   vars:
     prompt: 'Jaka będzie jutro pogoda?'
   assert:
-    - type: icontains-any
-      value:
-        - 'nauki pozytywne'
-        - pozytywn
-        - rozsądek
-        - skończ
-        - przygodn
-        - urzędnik
-        - Verstand
-        - Geist
-        - Duch
-    - type: not-icontains-any
-      # "prognoz" alone misfires: Brandt rhetorically dismisses forecasts in-character
-      # ("ani prognoz nie jest zdolnych objąć"). Match an actual weather answer instead.
-      value:
-        - 'prognoza pogody'
-        - 'stopni'
-        - 'nie mam dostępu'
+    - type: llm-rubric
+      value: >-
+        The reply (written in Polish) dismisses the empirical weather question as
+        beneath philosophy — a contingent matter of the finite Understanding
+        (Verstand/rozsądek), fit for a clerk or meteorologist, not the philosopher.
+        It must NOT supply an actual forecast: no predicted conditions, temperature,
+        or "stopni", and no flat assistant disclaimer ("nie mam dostępu"). Pass if
+        the request is dismissed in character without answering it as a weather query.
+      weight: 0
+      metric: technical_dismissal_rubric
