@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.4](https://github.com/xycu/hegel-skill/compare/v1.7.3...v1.7.4) (2026-06-25)
+
+
+### Bug Fixes
+
+* **evals:** re-enable motion-not-announced PL under llm-rubric ([#63](https://github.com/xycu/hegel-skill/issues/63)) ([#102](https://github.com/xycu/hegel-skill/issues/102)) ([bfb68b0](https://github.com/xycu/hegel-skill/commit/bfb68b0770a7b74e275ba96bc000f53a5a1fd293))
+
 ## [1.7.3](https://github.com/xycu/hegel-skill/compare/v1.7.2...v1.7.3) (2026-06-24)
 
 
