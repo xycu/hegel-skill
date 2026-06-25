@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.5](https://github.com/xycu/hegel-skill/compare/v1.7.4...v1.7.5) (2026-06-25)
+
+
+### Bug Fixes
+
+* **evals:** grade technical-dismissal mundane under llm-rubric (EN+PL) ([#105](https://github.com/xycu/hegel-skill/issues/105)) ([46db2d9](https://github.com/xycu/hegel-skill/commit/46db2d9d2ce798a0a90fdc0f99ea18e684c436e9))
+
 ## [1.7.4](https://github.com/xycu/hegel-skill/compare/v1.7.3...v1.7.4) (2026-06-25)
 
 
