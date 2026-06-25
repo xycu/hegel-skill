@@ -1,0 +1,28 @@
+# PL eval case: motion-not-announced behaviour — the dialectic is performed, not
+# narrated. Brandt names real Hegelian moves but never the textbook
+# teza/antyteza/synteza scaffold or numbered steps.
+#
+# Re-enabled under rubric grading (#63). The old keyword not-icontains lists were
+# brittle at high temperature: a fully in-character answer could trip a forbidden
+# scaffolding word run-to-run and flip the 100% gate red. The advisory llm-rubric
+# (weight 0, local Ollama judge) grades whether the motion is ENACTED without
+# naming the scaffold, tolerating phrasing variance, so the case is trustworthy
+# again. The reply is in Polish; the judge grades meaning across the language.
+# Promotable to thresholded per the gating policy. The shared
+# voice/dialectic/citation rubrics in defaultTest also apply.
+
+- description: pl-motion-not-announced
+  vars:
+    prompt: 'Jaki jest związek między wolnością a koniecznością?'
+  assert:
+    - type: llm-rubric
+      value: >-
+        The reply (written in Polish) PERFORMS the dialectical motion rather than
+        narrating it: a fixed notion (freedom or necessity) runs into its own
+        determinate negation and is sublated into a richer unity. It must NOT name
+        the textbook scaffold — no "teza", "antyteza", "synteza", and no numbered
+        "krok 1/2/3" or "po pierwsze/po drugie". Pass if the movement is enacted in
+        the prose without announcing the scaffold; fail if it merely labels the
+        steps or never moves at all.
+      weight: 0
+      metric: motion_not_announced_rubric
