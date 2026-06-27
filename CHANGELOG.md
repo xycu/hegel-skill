@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.0](https://github.com/xycu/hegel-skill/compare/v1.8.0...v1.9.0) (2026-06-27)
+
+
+### Features
+
+* **install:** Codex + OpenCode (AGENTS.md) ([#42](https://github.com/xycu/hegel-skill/issues/42)) ([#117](https://github.com/xycu/hegel-skill/issues/117)) ([b2f65b4](https://github.com/xycu/hegel-skill/commit/b2f65b48bf97d370ea90957af9317aaa13daab12))
+* **install:** Gemini CLI extension ([#41](https://github.com/xycu/hegel-skill/issues/41)) ([#116](https://github.com/xycu/hegel-skill/issues/116)) ([49d6de8](https://github.com/xycu/hegel-skill/commit/49d6de854041361cc2c9d05cab617f7087dc821d))
+
 ## [1.8.0](https://github.com/xycu/hegel-skill/compare/v1.7.5...v1.8.0) (2026-06-27)
 
 
