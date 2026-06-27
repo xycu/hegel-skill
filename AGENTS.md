@@ -211,7 +211,13 @@ as a metric, never fails a case yet — promotable to a threshold once trustwort
 they ran inline in the core files, which blocked a judge-free PR run; the curated
 references in `promptfoo/references/` are kept and re-wireable.) The system prompt (SKILL.md
 + reference, plus a Polish language directive for weak proxy models) is assembled by
-`promptfoo/prompt.js`. CI renders each run to a self-contained HTML report
+`promptfoo/prompt.js`. That builder also carries the **forced-roll test seam** (#55):
+a case sets `vars.roll` to force `SKILL.md`'s d20 takeover gate deterministically —
+`roll: 13` forces the spontaneous takeover branch, any other integer 1–20 (by
+convention `roll: 7`) forces a miss — and `prompt.js` injects an explicit "the die
+shows N" override the gate obeys instead of rolling. It is **eval-only**: production
+loads `SKILL.md` directly and never sets `roll`, so unforced use stays genuinely
+random; an out-of-range `roll` throws rather than silently reverting to a real roll. CI renders each run to a self-contained HTML report
 (`promptfoo export eval latest`, gitignored) and uploads it as a downloadable
 artifact (`promptfoo-report-<language>`) so the full result table is inspectable
 from GitHub; locally, `promptfoo view` serves the same results. The render uses the
