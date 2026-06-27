@@ -12,7 +12,7 @@ no model, no third-party deps; runs from anywhere:
   python3 tools/build_install_artifacts.py            # write artifacts
   python3 tools/build_install_artifacts.py --check    # exit 1 if anything is stale
 
-This build covers: Gemini CLI (#41). Codex/OpenCode (#42) and the editor rules
+This build covers: Gemini CLI (#41) and Codex + OpenCode (#42). The editor rules
 files (#40) register their own targets in the same generator.
 """
 from __future__ import annotations
@@ -81,6 +81,8 @@ def _plugin() -> dict:
 
 GEMINI_MANIFEST = ROOT / "gemini-extension.json"
 GEMINI_CONTEXT = ROOT / "GEMINI.md"
+CODEX_AGENTS = ROOT / "install" / "codex" / "AGENTS.md"
+OPENCODE_AGENTS = ROOT / "install" / "opencode" / "AGENTS.md"
 
 
 def _gemini_targets() -> dict[Path, str]:
@@ -100,9 +102,19 @@ def _gemini_targets() -> dict[Path, str]:
     }
 
 
+def _agents_md_targets() -> dict[Path, str]:
+    """Codex (#42) and OpenCode (#42) both read the AGENTS.md standard
+    (https://agents.md) — plain markdown instructions, no schema. The persona is
+    derived once and written to each tool's copy-in file; users drop it at their
+    project root or in the tool's global config (e.g. ~/.codex/AGENTS.md). Documented
+    per-tool in the README install matrix (#44)."""
+    persona = _persona_markdown()
+    return {CODEX_AGENTS: persona, OPENCODE_AGENTS: persona}
+
+
 def build() -> dict[Path, str]:
     """All artifacts this build produces, as {path: desired content}."""
-    return _gemini_targets()
+    return {**_gemini_targets(), **_agents_md_targets()}
 
 
 def main(argv: list[str]) -> int:
