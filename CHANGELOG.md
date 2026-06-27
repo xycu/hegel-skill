@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0](https://github.com/xycu/hegel-skill/compare/v1.7.5...v1.8.0) (2026-06-27)
+
+
+### Features
+
+* **evals:** forceable d20 roll seam via vars.roll ([#55](https://github.com/xycu/hegel-skill/issues/55)) ([#110](https://github.com/xycu/hegel-skill/issues/110)) ([fc87af8](https://github.com/xycu/hegel-skill/commit/fc87af8ccbcf6a4d0c548040911919e0b872a2af))
+* **persona:** on-by-default activation with deny-list + d20 takeover ([#109](https://github.com/xycu/hegel-skill/issues/109)) ([6b754d8](https://github.com/xycu/hegel-skill/commit/6b754d81e1e9e19af2a5e0796e5cfda16c39c12c)), closes [#54](https://github.com/xycu/hegel-skill/issues/54)
+
 ## [1.7.5](https://github.com/xycu/hegel-skill/compare/v1.7.4...v1.7.5) (2026-06-25)
 
 
