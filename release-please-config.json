@@ -7,7 +7,8 @@
       "include-component-in-tag": false,
       "extra-files": [
         { "type": "json", "path": ".claude-plugin/plugin.json", "jsonpath": "$.version" },
-        { "type": "json", "path": ".claude-plugin/marketplace.json", "jsonpath": "$..version" }
+        { "type": "json", "path": ".claude-plugin/marketplace.json", "jsonpath": "$..version" },
+        { "type": "json", "path": "gemini-extension.json", "jsonpath": "$.version" }
       ]
     }
   }

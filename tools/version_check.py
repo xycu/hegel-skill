@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """Version-drift guard for the plugin package.
 
-The plugin version is duplicated across three fields that MUST stay in lockstep:
+The plugin version is duplicated across fields that MUST stay in lockstep:
   - .claude-plugin/plugin.json            -> version
   - .claude-plugin/marketplace.json       -> metadata.version
   - .claude-plugin/marketplace.json       -> plugins[0].version
+  - gemini-extension.json                 -> version   (cross-tool artifact, #43)
 
-The release pipeline (release-please) updates all three together, but a manual
-edit, a botched updater config, or a partial revert could desynchronize them.
-This deterministic check fails (exit 1, naming the divergent field) if they ever
-disagree. No model, no third-party dependencies. Run from anywhere.
+The release pipeline (release-please) updates them together via its `extra-files`
+config, but a manual edit, a botched updater config, or a partial revert could
+desynchronize them. This deterministic check fails (exit 1, naming the divergent
+field) if they ever disagree. Any future tool manifest that carries its own
+version (per the cross-tool-install spec) is added here so bumping plugin.json
+without bumping it fails the build. No model, no third-party dependencies. Run
+from anywhere.
 """
 from __future__ import annotations
 
@@ -20,16 +24,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_JSON = ROOT / ".claude-plugin" / "plugin.json"
 MARKETPLACE_JSON = ROOT / ".claude-plugin" / "marketplace.json"
+GEMINI_MANIFEST = ROOT / "gemini-extension.json"
 
 
 def collect() -> list[tuple[str, str]]:
-    """Return (label, version) for each of the three tracked fields."""
+    """Return (label, version) for each tracked field."""
     plugin = json.loads(PLUGIN_JSON.read_text(encoding="utf-8"))
     marketplace = json.loads(MARKETPLACE_JSON.read_text(encoding="utf-8"))
+    gemini = json.loads(GEMINI_MANIFEST.read_text(encoding="utf-8"))
     return [
         ("plugin.json:version", plugin["version"]),
         ("marketplace.json:metadata.version", marketplace["metadata"]["version"]),
         ("marketplace.json:plugins[0].version", marketplace["plugins"][0]["version"]),
+        ("gemini-extension.json:version", gemini["version"]),
     ]
 
 
