@@ -74,7 +74,15 @@ boundary case. #56 covers this so it cannot silently regress.
 ## Forceability (required here; mechanism is #55)
 
 The spec **requires** the gate be forceable — `force-13` and `force-miss` — so
-evals exercise both branches while normal use stays genuinely random. Recommended
-seam (non-binding, decided in #55): a system-prompt override the harness injects
-via a `prompt.js` var, never set in production; `SKILL.md`'s gate reads "if an
-explicit roll override is present in your instructions, use it instead of rolling."
+evals exercise both branches while normal use stays genuinely random.
+
+**Decided in #55:** the seam is the `vars.roll` case var read by
+`promptfoo/prompt.js`. A case sets `roll: 13` to force the takeover branch and
+`roll: 7` (any integer 1–20 that is not 13, by convention 7) to force a miss;
+`prompt.js` appends an explicit "the die shows N" override to the assembled system
+prompt, landing last so it is the most salient instruction. `SKILL.md`'s gate reads
+"if an explicit roll override is present in your instructions, obey it instead of
+rolling," so it honours the injected value. An out-of-range `roll` throws, failing
+the case loudly rather than silently reverting to a genuine roll. Production never
+goes through `prompt.js` (the live runtime loads `SKILL.md` directly), and no
+production path sets `vars.roll`, so unforced use stays genuinely random.
