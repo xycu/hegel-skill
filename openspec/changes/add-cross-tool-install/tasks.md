@@ -8,7 +8,7 @@
 
 ## 2. Handoff to the implementing sub-issues (built on their own branches)
 
-- [ ] 2.1 **#40** — generator + copy-a-rules-file artifacts for Cursor / Windsurf / Cline /
+- [x] 2.1 **#40** — generator + copy-a-rules-file artifacts for Cursor / Windsurf / Cline /
       Zed / Aider / Copilot under `install/<tool>/`.
 - [ ] 2.2 **#41** — Gemini CLI native install (`gemini-extension.json` + `GEMINI.md`).
 - [ ] 2.3 **#42** — Codex + OpenCode native install manifests.

@@ -12,8 +12,8 @@ no model, no third-party deps; runs from anywhere:
   python3 tools/build_install_artifacts.py            # write artifacts
   python3 tools/build_install_artifacts.py --check    # exit 1 if anything is stale
 
-This build covers: Gemini CLI (#41) and Codex + OpenCode (#42). The editor rules
-files (#40) register their own targets in the same generator.
+This build covers: Gemini CLI (#41), Codex + OpenCode (#42), and the editor rules
+files (#40) for Cursor / Windsurf / Cline / Zed / Aider / GitHub Copilot.
 """
 from __future__ import annotations
 
@@ -112,9 +112,49 @@ def _agents_md_targets() -> dict[Path, str]:
     return {CODEX_AGENTS: persona, OPENCODE_AGENTS: persona}
 
 
+# Editor agents (#40): no plugin marketplace — you install Brandt by copying ONE
+# generated rules file into the tool's rules dir. Each takes a single rules blob, so
+# the shelf is inlined (per design note #4). The persona body is identical across all
+# six; only the per-tool header/frontmatter differs, and only where the tool needs it
+# to treat the file as always-on. Destination paths the README matrix (#44) points at:
+#   Cursor   -> .cursor/rules/soused-hegelian.mdc
+#   Windsurf -> .windsurf/rules/soused-hegelian.md
+#   Cline    -> .clinerules/soused-hegelian.md
+#   Zed      -> .rules
+#   Aider    -> CONVENTIONS.md (referenced via --read / .aider.conf.yml)
+#   Copilot  -> .github/copilot-instructions.md
+EDITOR = ROOT / "install"
+
+
+def _editor_targets() -> dict[Path, str]:
+    persona = _persona_markdown()
+    description = _plugin()["description"]
+    # Cursor only applies an .mdc rule when its frontmatter says so; alwaysApply: true
+    # makes the persona project-wide. Empty globs => not path-scoped.
+    cursor_frontmatter = (
+        "---\n"
+        f'description: "{description}"\n'
+        "globs:\n"
+        "alwaysApply: true\n"
+        "---\n\n"
+    )
+    # Windsurf reads the activation mode from frontmatter; always_on mirrors Cursor.
+    windsurf_frontmatter = "---\ntrigger: always_on\n---\n\n"
+    return {
+        EDITOR / "cursor" / "soused-hegelian.mdc": cursor_frontmatter + persona,
+        EDITOR / "windsurf" / "soused-hegelian.md": windsurf_frontmatter + persona,
+        # Cline, Zed, Aider, and Copilot load their rules file unconditionally — the
+        # "always on" adapter in the body is all the activation note they need.
+        EDITOR / "cline" / "soused-hegelian.md": persona,
+        EDITOR / "zed" / ".rules": persona,
+        EDITOR / "aider" / "CONVENTIONS.md": persona,
+        EDITOR / "copilot" / "copilot-instructions.md": persona,
+    }
+
+
 def build() -> dict[Path, str]:
     """All artifacts this build produces, as {path: desired content}."""
-    return {**_gemini_targets(), **_agents_md_targets()}
+    return {**_gemini_targets(), **_agents_md_targets(), **_editor_targets()}
 
 
 def main(argv: list[str]) -> int:
