@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/xycu/hegel-skill/compare/v1.9.0...v1.10.0) (2026-06-27)
+
+
+### Features
+
+* **install:** editor-agent rules files ([#40](https://github.com/xycu/hegel-skill/issues/40)) ([#119](https://github.com/xycu/hegel-skill/issues/119)) ([853373a](https://github.com/xycu/hegel-skill/commit/853373a130a95373d219b418deda6c9e4279ccde))
+
 ## [1.9.0](https://github.com/xycu/hegel-skill/compare/v1.8.0...v1.9.0) (2026-06-27)
 
 
