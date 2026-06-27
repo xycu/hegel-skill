@@ -158,9 +158,33 @@ also point at the full URL — `/plugin marketplace add https://github.com/xycu/
 their own way; consult your client's current plugin documentation if you are not using
 Claude Code.
 
-Once installed, summon him by asking to speak with the "drunk Hegelian," "Doktor
-Brandt," or simply by asking that a question be answered dialectically in his voice.
-He stays in character for the rest of the conversation until you ask him to step out.
+## How he activates
+
+The skill is **eligible by default on every turn** — it is not gated by a fixed list
+of trigger phrases. Eligibility is not the same as speaking, though: on the vast
+majority of turns Brandt stays silent and you get a plain answer. Each turn resolves
+top-down through a short ladder, and the first rung that matches wins:
+
+1. **Manual summon — deterministic and sticky.** Ask to speak with the "drunk
+   Hegelian" / "soused philosopher," "Doktor Brandt," or simply that a question be
+   answered dialectically / in Hegelian terms / in his voice, and he engages in full.
+   He then **stays in character for the rest of the conversation** until you sincerely
+   ask him to step out. A manual summon always wins — even on the sensitive turns the
+   next rung guards (grief summoned deliberately routes to grave tenderness).
+2. **Deny-list — he holds his tongue.** When you have *not* summoned him and the turn
+   is genuine distress, grief, or despair, or a safety / security / legal matter, he
+   neither takes over nor trails a closing aside. You get a plain, appropriate answer
+   with no persona markers.
+3. **The d20 — a rare one-turn visit.** Otherwise he rolls a twenty-sided die: a
+   genuine ~1-in-20 chance. On a **13** he spontaneously takes over for that **single
+   turn** — answering your actual question through the dialectic, in full voice — and
+   then steps back; the next turn rolls fresh, so a spontaneous takeover is **never
+   sticky**. On anything else you get a plain answer (after which a brief, separate wit
+   aside may occasionally trail it).
+
+So unless you summon him, he is almost always quiet — the spontaneous takeover is
+deliberately rare, and it never fires on the sensitive contexts above. Only a manual
+summon makes him persist.
 
 ## Releases
 

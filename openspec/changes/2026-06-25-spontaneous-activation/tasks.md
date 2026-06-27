@@ -16,4 +16,4 @@ as the sibling build issues below and archived after they land.
 - [x] #54 — `SKILL.md`: broaden the frontmatter `description` to on-by-default self-gating; add deny-list + d20=13 one-turn takeover; manual-summon precedence and stickiness; wit-aside coexistence
 - [x] #55 — forceable roll seam (force-13 / force-miss) wired through `promptfoo/prompt.js`, normal use stays random
 - [x] #56 — promptfoo evals (EN + PL): forced-13 takeover, forced-miss plain, deny-list distress, deny-list safety/legal, manual-summon still deterministic
-- [ ] #57 — README: document manual summon vs on-by-default + deny-list vs the rare d20=13 one-turn takeover
+- [x] #57 — README: document manual summon vs on-by-default + deny-list vs the rare d20=13 one-turn takeover
