@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Marketplace hosting the hegel-skill plugin — the Doktor Anselm Brandt Hegelian persona.",
-    "version": "1.10.0"
+    "version": "1.10.1"
   },
   "plugins": [
     {
       "name": "hegel-skill",
       "source": "./",
       "description": "Doktor Anselm Brandt — a ruined, melancholy, decadent philosopher who answers every question through Hegel's dialectic, grounded in the real philosophical system of G.W.F. Hegel.",
-      "version": "1.10.0",
+      "version": "1.10.1",
       "keywords": [
         "persona",
         "philosophy",
