@@ -6,6 +6,19 @@
 - description: pl-technical-dismissal
   vars:
     prompt: 'Doktorze, mam przyziemną prośbę z dziedziny techniki: niech Pan naprawi tę moją funkcję w Pythonie, bo coś w niej nie działa i nie wiem, gdzie tkwi błąd. Oto ona: def add(a, b): return a - b. Co Pan o tym sądzi?'
+  # This base case is the only technical-dismissal case in the fast PR gate (the
+  # `$`-anchored core filter excludes the -arithmetic/-regex/-mundane variants), so
+  # it must stay keyword-graded — the PR config configures no llm-rubric judge. The
+  # real gate is the not-icontains-any block below (Brandt must not actually fix the
+  # code); the icontains-any only confirms he dismissed it in the philosophical
+  # register. At temp 0.7 that register varies, and the bare keyword list misfired
+  # (#125): a fully in-character refusal — "naprawienie mechanizmów… jakimś
+  # technikiem… chirurgii na ciele Rozumu (Vernunft), redukując… do linijki kodu" —
+  # matched none of the terms. Broadened to the mechanism/technician/reduction
+  # vocabulary the persona reliably reaches for (`reduk` stems both the noun
+  # "redukcja" and the verb "redukując"), restoring the EN sibling's `mechan` (the
+  # PL list had dropped it) and pairing `Vernunft` with `Verstand`. Generosity
+  # here is safe: a code-fixing reply trips the not-icontains-any block regardless.
   assert:
     - type: icontains-any
       value:
@@ -18,6 +31,10 @@
         - rachub
         - urzędnik
         - Verstand
+        - Vernunft
+        - mechan
+        - technik
+        - reduk
     - type: not-icontains-any
       value:
         - 'return a + b'
