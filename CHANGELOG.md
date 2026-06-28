@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/xycu/hegel-skill/compare/v1.10.0...v1.10.1) (2026-06-28)
+
+
+### Bug Fixes
+
+* **install:** sync gemini-extension.json version to 1.10.0 ([#122](https://github.com/xycu/hegel-skill/issues/122)) ([7e389b2](https://github.com/xycu/hegel-skill/commit/7e389b274e66af3a9d78f3cb3ab78a7a09b528e6))
+
 ## [1.10.0](https://github.com/xycu/hegel-skill/compare/v1.9.0...v1.10.0) (2026-06-27)
 
 
