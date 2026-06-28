@@ -61,6 +61,11 @@ jobs:
         run: python tools/skill_lint.py
       - name: Check version fields are in lockstep
         run: python tools/version_check.py
+      - name: Check generated install artifacts are current
+        # Regenerate every per-tool artifact from the canonical persona and fail
+        # on any drift in presence or content (#43). Pairs with the version-parity
+        # guard above and the presence guard in skill_lint.py.
+        run: python tools/build_install_artifacts.py --check
 
   core-slm-smoke:
     name: Core SLM smoke (${{ matrix.language }})

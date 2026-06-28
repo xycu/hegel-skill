@@ -12,6 +12,6 @@
       Zed / Aider / Copilot under `install/<tool>/`.
 - [ ] 2.2 **#41** — Gemini CLI native install (`gemini-extension.json` + `GEMINI.md`).
 - [ ] 2.3 **#42** — Codex + OpenCode native install manifests.
-- [ ] 2.4 **#43** — CI guard: generator regenerate-and-diff drift check + version parity across
+- [x] 2.4 **#43** — CI guard: generator regenerate-and-diff drift check + version parity across
       versioned artifacts (extend `tools/version_check.py`).
 - [ ] 2.5 **#44** — README per-tool install matrix documenting one path per supported tool.

@@ -17,6 +17,24 @@ REFERENCE = ROOT / "skills" / "soused-hegelian" / "references" / "hegel-referenc
 PLUGIN_JSON = ROOT / ".claude-plugin" / "plugin.json"
 MARKETPLACE_JSON = ROOT / ".claude-plugin" / "marketplace.json"
 
+# Per-tool install artifacts (#43). Each generated artifact MUST exist at its
+# agreed path, so deleting or renaming one fails the lint. This is the presence
+# contract; content/version drift is guarded separately by
+# tools/build_install_artifacts.py --check and tools/version_check.py. Keep in
+# step with the targets in tools/build_install_artifacts.py and the README matrix.
+INSTALL_ARTIFACTS = [
+    "gemini-extension.json",                      # Gemini CLI extension (#41)
+    "GEMINI.md",
+    "install/codex/AGENTS.md",                    # Codex (#42)
+    "install/opencode/AGENTS.md",                 # OpenCode (#42)
+    "install/cursor/soused-hegelian.mdc",         # editor rules files (#40)
+    "install/windsurf/soused-hegelian.md",
+    "install/cline/soused-hegelian.md",
+    "install/zed/.rules",
+    "install/aider/CONVENTIONS.md",
+    "install/copilot/copilot-instructions.md",
+]
+
 # Terms the description must mention so the client triggers the skill.
 DESCRIPTION_TERMS = ["brandt", "hegel", "dialectic"]
 # Behavioural rules the body must keep documenting.
@@ -49,6 +67,10 @@ def lint() -> list[str]:
             json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
             errors.append(f"invalid JSON in {rel}: {e}")
+
+    for rel in INSTALL_ARTIFACTS:
+        if not (ROOT / rel).exists():
+            errors.append(f"missing install artifact: {rel}")
 
     if not SKILL.exists():
         return errors  # nothing more to check without the file
