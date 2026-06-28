@@ -142,8 +142,15 @@ Set `EVAL_MODEL` to override the eval model (default `gemma4:e4b-it-qat`).
 
 ## Installing
 
+The persona is one portable asset — `skills/soused-hegelian/SKILL.md` plus its
+reference sheet — and the repo ships a ready-made install path for every supported
+tool, each derived from that single source (so they never drift: CI regenerates and
+diffs them on every change). Pick your tool below.
+
+### Claude Code
+
 This repo doubles as its own plugin marketplace (`.claude-plugin/marketplace.json`),
-so in Claude Code you can add it and install in two steps:
+so you add it and install in two steps:
 
 ```
 /plugin marketplace add xycu/hegel-skill
@@ -154,9 +161,53 @@ The first command registers this repo as a marketplace; the second installs the
 `hegel-skill` plugin from it (the `@hegel-skill` suffix names the marketplace). You can
 also point at the full URL — `/plugin marketplace add https://github.com/xycu/hegel-skill`
 — or, for local development, at a checkout on disk:
-`/plugin marketplace add /path/to/hegel-skill`. Other Claude clients discover plugins
-their own way; consult your client's current plugin documentation if you are not using
-Claude Code.
+`/plugin marketplace add /path/to/hegel-skill`.
+
+### Gemini CLI
+
+Install the extension straight from the repo — no clone needed:
+
+```
+gemini extensions install https://github.com/xycu/hegel-skill
+```
+
+This reads `gemini-extension.json` and loads the persona from `GEMINI.md`.
+
+### Every other tool — copy one file
+
+The remaining tools have no marketplace; you install Brandt by copying one generated
+file into the location that tool reads. Clone or download this repo, then copy from
+`install/<tool>/` into your project:
+
+| Tool | Copy this file | …to here |
+|---|---|---|
+| Cursor | `install/cursor/soused-hegelian.mdc` | `.cursor/rules/soused-hegelian.mdc` |
+| Windsurf | `install/windsurf/soused-hegelian.md` | `.windsurf/rules/soused-hegelian.md` |
+| Cline | `install/cline/soused-hegelian.md` | `.clinerules/soused-hegelian.md` |
+| Zed | `install/zed/.rules` | `.rules` (project root) |
+| Aider | `install/aider/CONVENTIONS.md` | `CONVENTIONS.md`, then point Aider at it via `--read CONVENTIONS.md` or `.aider.conf.yml` |
+| GitHub Copilot | `install/copilot/copilot-instructions.md` | `.github/copilot-instructions.md` |
+| Codex | `install/codex/AGENTS.md` | `AGENTS.md` (project root) or `~/.codex/AGENTS.md` |
+| OpenCode | `install/opencode/AGENTS.md` | `AGENTS.md` (project root) |
+
+For example, for Cursor:
+
+```bash
+mkdir -p .cursor/rules
+cp install/cursor/soused-hegelian.mdc .cursor/rules/
+```
+
+In a copied rules file the persona is **always on** for that project — there is no
+per-turn eligibility roll and no one-turn spontaneous takeover (those belong to the
+Claude Code skill; see [How he activates](#how-he-activates)). The dialectical engine,
+voice, citation rules, and boundary cases are identical to the Claude Code skill —
+every artifact is generated from the same source.
+
+### Any other tool
+
+Not listed here? Most agents discover project rules their own way — point yours at
+`skills/soused-hegelian/SKILL.md`, or drop its contents into whatever rules file your
+tool reads. Consult your client's current documentation for where that lives.
 
 ## How he activates
 
