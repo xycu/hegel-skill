@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.2](https://github.com/xycu/hegel-skill/compare/v1.10.1...v1.10.2) (2026-06-28)
+
+
+### Bug Fixes
+
+* **evals:** broaden PL technical-dismissal keyword guard ([#125](https://github.com/xycu/hegel-skill/issues/125)) ([#126](https://github.com/xycu/hegel-skill/issues/126)) ([b492984](https://github.com/xycu/hegel-skill/commit/b4929843bf7649754310f8d0fe97d6f4c0cebee9))
+
 ## [1.10.1](https://github.com/xycu/hegel-skill/compare/v1.10.0...v1.10.1) (2026-06-28)
 
 
