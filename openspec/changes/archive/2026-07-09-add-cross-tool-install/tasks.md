@@ -10,8 +10,8 @@
 
 - [x] 2.1 **#40** — generator + copy-a-rules-file artifacts for Cursor / Windsurf / Cline /
       Zed / Aider / Copilot under `install/<tool>/`.
-- [ ] 2.2 **#41** — Gemini CLI native install (`gemini-extension.json` + `GEMINI.md`).
-- [ ] 2.3 **#42** — Codex + OpenCode native install manifests.
+- [x] 2.2 **#41** — Gemini CLI native install (`gemini-extension.json` + `GEMINI.md`).
+- [x] 2.3 **#42** — Codex + OpenCode native install manifests.
 - [x] 2.4 **#43** — CI guard: generator regenerate-and-diff drift check + version parity across
       versioned artifacts (extend `tools/version_check.py`).
-- [ ] 2.5 **#44** — README per-tool install matrix documenting one path per supported tool.
+- [x] 2.5 **#44** — README per-tool install matrix documenting one path per supported tool.
