@@ -96,10 +96,13 @@ The plan workflow SHALL authenticate to GCP via Workload Identity Federation (OI
 system SHALL NOT store long-lived service-account keys in the repository, in CI secrets,
 or in IaC state. The federated principal SHALL hold least-privilege IAM — read/write to
 the state bucket, plus read-only visibility into enabled project services
-(`roles/serviceusage.serviceUsageViewer`) and basic project metadata (`roles/browser`) so
-a plan can refresh those resources — with no write or enable/disable permission over
-project services, no ability to read or manage any other project resource's data plane,
-and no Cloud Run, Artifact Registry, or Secret Manager grants.
+(`roles/serviceusage.serviceUsageViewer`), basic project metadata (`roles/browser`), and
+its own identity infrastructure's metadata (`roles/iam.serviceAccountViewer`,
+`roles/iam.workloadIdentityPoolViewer`) so a plan can refresh those resources — with no
+write or enable/disable permission over project services, no ability to impersonate or
+reconfigure any service account or identity pool beyond itself, no ability to read or
+manage any other project resource's data plane, and no Cloud Run, Artifact Registry, or
+Secret Manager grants.
 
 #### Scenario: CI authenticates without stored keys
 

@@ -70,3 +70,21 @@ resource "google_project_iam_member" "runner_browser" {
   role    = "roles/browser"
   member  = "serviceAccount:${google_service_account.runner.email}"
 }
+
+# The runner SA also self-references this module's own resources on every plan
+# (its own service account, the WIF pool/provider), which needs the matching
+# read-only viewer roles — none of the grants above cover reading a service
+# account's or workload identity pool's own metadata/IAM policy. Both are
+# read-only: neither lets the runner SA create, delete, or reconfigure anything,
+# or grant itself (or anyone else) additional impersonation rights.
+resource "google_project_iam_member" "runner_service_account_viewer" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountViewer"
+  member  = "serviceAccount:${google_service_account.runner.email}"
+}
+
+resource "google_project_iam_member" "runner_workload_identity_pool_viewer" {
+  project = var.project_id
+  role    = "roles/iam.workloadIdentityPoolViewer"
+  member  = "serviceAccount:${google_service_account.runner.email}"
+}

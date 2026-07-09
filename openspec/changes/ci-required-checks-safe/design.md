@@ -115,8 +115,25 @@ couldn't be confirmed from a client error message alone. Working hypothesis: Ter
 read of `google_project_service` also needs basic project-metadata visibility
 (`resourcemanager.projects.get`), which `serviceUsageViewer` doesn't include but the
 separate, still read-only `roles/browser` role does — this is a well-known companion-role
-gap for scoped service-usage access. Added `roles/browser` alongside it; awaiting a fresh
-`tofu apply` + CI re-run to confirm.
+gap for scoped service-usage access. Added `roles/browser` alongside it; confirmed via a
+maintainer apply + CI re-run that this fully resolved the `google_project_service` 403s.
+
+That surfaced the next layer: with those resources readable, `tofu plan` proceeded into
+`module.wif` itself and hit two more 403s — `iam.serviceAccounts.get` on the runner SA's
+own resource, and `iam.workloadIdentityPools.get` on the WIF pool. The runner SA had never
+been granted read access to its *own* identity infrastructure (only the resource-level
+`workloadIdentityUser` binding needed for impersonation, which doesn't grant general read).
+Added `roles/iam.serviceAccountViewer` and `roles/iam.workloadIdentityPoolViewer` (both
+read-only — list/get metadata and IAM policy, no impersonation or reconfiguration rights).
+This is the third round of "discover a 403, add one narrow viewer role" for this single
+`infra-plan.yml` fix; a similar gap may still surface for
+`google_storage_bucket_iam_member.runner_state`'s bucket-IAM-policy read, since
+`storage.objectAdmin` is scoped to object data, not necessarily `storage.buckets.getIamPolicy`.
+Weighed continuing this incremental path against switching to Option B (splitting the
+bootstrap/WIF resources out of the CI-planned state, so the runner SA never needs to read
+its own identity plumbing at all) — decided to continue with narrow grants for now, since
+each one so far has stayed genuinely read-only and the state-splitting alternative carries
+its own migration risk and drift-detection trade-off (see above).
 
 ## Risks / Trade-offs
 

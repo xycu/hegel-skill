@@ -74,4 +74,14 @@
 - [x] 5.4 Same 403s persisted after 5.3 — `serviceUsageViewer` alone wasn't sufficient.
       Added `roles/browser` (read-only project metadata,
       e.g. `resourcemanager.projects.get`) alongside it in `infra/modules/wif/main.tf`.
-- [ ] 5.5 Maintainer applies 5.4 by hand; re-verify `infra-plan.yml` goes green on PR #135.
+- [x] 5.5 Maintainer applied 5.4 by hand. Confirmed `google_project_service` 403s are
+      gone, but the plan then hit new 403s reading `module.wif`'s own resources
+      (`iam.serviceAccounts.get` on the runner SA, `iam.workloadIdentityPools.get` on the
+      WIF pool) — the runner SA had no read access to its own identity infrastructure.
+      Added `roles/iam.serviceAccountViewer` and `roles/iam.workloadIdentityPoolViewer`
+      (both read-only) in `infra/modules/wif/main.tf`.
+- [ ] 5.6 Maintainer applies 5.5 by hand; re-verify `infra-plan.yml` goes green on PR #135.
+      (If another 403 surfaces — e.g. reading the state bucket's IAM policy for
+      `google_storage_bucket_iam_member.runner_state` — expect one more narrow viewer-role
+      round; `roles/storage.objectAdmin` covers object data but not necessarily
+      `storage.buckets.getIamPolicy`.)
