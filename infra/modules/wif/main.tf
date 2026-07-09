@@ -58,3 +58,15 @@ resource "google_project_iam_member" "runner_service_usage_viewer" {
   role    = "roles/serviceusage.serviceUsageViewer"
   member  = "serviceAccount:${google_service_account.runner.email}"
 }
+
+# serviceUsageViewer alone still 403'd on the same read: Terraform's read of
+# google_project_service also needs basic project-metadata visibility
+# (resourcemanager.projects.get), which that narrower role doesn't include.
+# `roles/browser` is the standard, still read-only pairing for exactly this case —
+# it grants read access to a project's basic metadata and nothing else (no service
+# configuration, no data plane access to any resource).
+resource "google_project_iam_member" "runner_browser" {
+  project = var.project_id
+  role    = "roles/browser"
+  member  = "serviceAccount:${google_service_account.runner.email}"
+}

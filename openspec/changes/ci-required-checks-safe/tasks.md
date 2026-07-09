@@ -67,6 +67,11 @@
       `infra/modules/wif/main.tf`, so `tofu plan` can refresh the root module's
       `google_project_service` resources without the broader project-level grants the
       existing least-privilege design deliberately withholds.
-- [ ] 5.3 Maintainer applies 5.2 by hand (`tofu apply`, same manual process as 3.4 — the
+- [x] 5.3 Maintainer applies 5.2 by hand (`tofu apply`, same manual process as 3.4 — the
       runner SA can't grant itself IAM, so this one specifically needs your own gcloud
-      credentials, not just repo-admin GitHub access).
+      credentials, not just repo-admin GitHub access). Applied — confirmed live via
+      `tofu apply` showing the resource refreshed with no drift.
+- [x] 5.4 Same 403s persisted after 5.3 — `serviceUsageViewer` alone wasn't sufficient.
+      Added `roles/browser` (read-only project metadata,
+      e.g. `resourcemanager.projects.get`) alongside it in `infra/modules/wif/main.tf`.
+- [ ] 5.5 Maintainer applies 5.4 by hand; re-verify `infra-plan.yml` goes green on PR #135.

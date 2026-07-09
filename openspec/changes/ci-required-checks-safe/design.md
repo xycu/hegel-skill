@@ -104,6 +104,20 @@ requirement). Two ways to fix this were weighed:
   them again) — a regression against the "Drift is detectable" scenario for exactly the
   resources that are hardest to hand-verify.
 
+`serviceUsageViewer` alone turned out insufficient in practice: the maintainer confirmed
+via `tofu apply` that the grant was live (no drift on re-plan locally, using their own
+elevated credentials), yet the CI-run plan (as the restricted runner SA) kept 403ing on
+the identical `google_project_service` reads. Local reproduction via
+`--impersonate-service-account` wasn't available either (the maintainer's own account was
+never granted `serviceAccountTokenCreator` on the runner SA — only the GitHub OIDC
+principal was, via a narrower, WIF-specific grant), so the exact missing permission
+couldn't be confirmed from a client error message alone. Working hypothesis: Terraform's
+read of `google_project_service` also needs basic project-metadata visibility
+(`resourcemanager.projects.get`), which `serviceUsageViewer` doesn't include but the
+separate, still read-only `roles/browser` role does — this is a well-known companion-role
+gap for scoped service-usage access. Added `roles/browser` alongside it; awaiting a fresh
+`tofu apply` + CI re-run to confirm.
+
 ## Risks / Trade-offs
 
 - **[Risk]** A future path added to `skills/**` etc. that should trigger CI but is missed
