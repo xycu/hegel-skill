@@ -80,8 +80,17 @@
       WIF pool) — the runner SA had no read access to its own identity infrastructure.
       Added `roles/iam.serviceAccountViewer` and `roles/iam.workloadIdentityPoolViewer`
       (both read-only) in `infra/modules/wif/main.tf`.
-- [ ] 5.6 Maintainer applies 5.5 by hand; re-verify `infra-plan.yml` goes green on PR #135.
-      (If another 403 surfaces — e.g. reading the state bucket's IAM policy for
-      `google_storage_bucket_iam_member.runner_state` — expect one more narrow viewer-role
-      round; `roles/storage.objectAdmin` covers object data but not necessarily
-      `storage.buckets.getIamPolicy`.)
+- [x] 5.6 Maintainer applied 5.5 by hand. Confirmed `iam.serviceAccounts.get` cleared, but
+      `iam.workloadIdentityPools.get` still 403'd (role confirmed correct per Google's own
+      WIF docs — treated as IAM propagation lag, not a wrong grant) and a *new* 403
+      surfaced exactly as predicted: `storage.buckets.getIamPolicy` on the state bucket,
+      needed to refresh `google_storage_bucket_iam_member.runner_state`.
+- [x] 5.7 Researched the bucket-IAM-read gap: no bucket-scoped role grants
+      `storage.buckets.getIamPolicy` without also granting `setIamPolicy`
+      (`roles/storage.legacyBucketOwner`/`legacyBucketWriter` — a write/escalation-capable
+      permission on that bucket's own IAM policy). Chose the project-level
+      `roles/iam.securityReviewer` instead — genuinely read-only (Google's purpose-built
+      "view IAM policies across resources" role) — over granting bucket-level write
+      capability just to unblock a read. Added in `infra/modules/wif/main.tf`.
+- [ ] 5.8 Maintainer applies 5.7 by hand; re-verify `infra-plan.yml` goes green on PR #135,
+      and re-check whether the `workloadIdentityPools.get` 403 has cleared (propagation).

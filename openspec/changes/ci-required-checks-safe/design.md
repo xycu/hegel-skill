@@ -135,6 +135,23 @@ its own identity plumbing at all) — decided to continue with narrow grants for
 each one so far has stayed genuinely read-only and the state-splitting alternative carries
 its own migration risk and drift-detection trade-off (see above).
 
+That prediction landed: after applying the two viewer roles, `iam.serviceAccounts.get`
+cleared but `iam.workloadIdentityPools.get` did not (role confirmed correct against
+Google's own WIF docs, so likely propagation lag rather than a wrong grant), and a new
+403 appeared on `storage.buckets.getIamPolicy` for
+`google_storage_bucket_iam_member.runner_state`. This one broke the clean "add one
+narrow, genuinely read-only role" pattern: no bucket-scoped Cloud Storage role grants
+`getIamPolicy` without also granting `setIamPolicy` (`roles/storage.legacyBucketOwner` /
+`legacyBucketWriter`) — a write/escalation-capable permission on that bucket's own IAM
+policy (bucket-level `setIamPolicy` is one of GCP's documented privilege-escalation
+vectors). Rather than hand the runner SA the ability to rewrite its own state bucket's
+IAM policy just to unblock a read, granted the project-level `roles/iam.securityReviewer`
+instead — Google's purpose-built, genuinely read-only "view IAM policies across
+resources" role (used by security-scanning tools), broader in surface than one bucket but
+with zero write capability anywhere. This is now the fourth and fifth grant added while
+chasing this single `infra-plan.yml` fix; if the pattern continues past this, revisit
+Option B rather than keep expanding the runner SA's project-level footprint.
+
 ## Risks / Trade-offs
 
 - **[Risk]** A future path added to `skills/**` etc. that should trigger CI but is missed

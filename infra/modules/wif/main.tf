@@ -88,3 +88,17 @@ resource "google_project_iam_member" "runner_workload_identity_pool_viewer" {
   role    = "roles/iam.workloadIdentityPoolViewer"
   member  = "serviceAccount:${google_service_account.runner.email}"
 }
+
+# tofu plan also needs to read the state bucket's own IAM policy (to refresh
+# google_storage_bucket_iam_member.runner_state) — storage.buckets.getIamPolicy.
+# No bucket-scoped role grants that without also granting setIamPolicy
+# (roles/storage.legacyBucketOwner/Writer — a write/escalation-capable
+# permission on the bucket's own IAM policy, not something to hand to CI just to
+# unblock a read). roles/iam.securityReviewer is the project-level role Google
+# built for exactly this: get-IAM-policy visibility across resources, read-only,
+# no ability to modify anything.
+resource "google_project_iam_member" "runner_security_reviewer" {
+  project = var.project_id
+  role    = "roles/iam.securityReviewer"
+  member  = "serviceAccount:${google_service_account.runner.email}"
+}
