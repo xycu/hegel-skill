@@ -25,6 +25,11 @@ required would break every doc-only or infra-only PR (GitHub issue #73).
   capability.
 - Canary matrix legs (e.g. `pl-canary-bielik7b`) stay non-required — they're already
   `continue-on-error` and must not block merges.
+- Grant the WIF-federated runner service account `roles/serviceusage.serviceUsageViewer`
+  (read-only) at the project level, so `infra-plan.yml`'s `tofu plan` can refresh the root
+  module's `google_project_service` resources — discovered blocking verification of this
+  change's own Terraform diff (`infra-plan.yml` had never actually run to completion
+  before; every prior PR skipped it before the WIF bootstrap variables existed).
 
 ## Capabilities
 
@@ -36,8 +41,10 @@ required would break every doc-only or infra-only PR (GitHub issue #73).
 
 - `ci-infrastructure`: the "Fast eval gate on every pull request" requirement gains a
   constraint that the gate's jobs must always report a terminal status context (so they
-  are safe to mark required), and the "GitHub configuration as code" requirement extends
-  to cover required-status-check branch protection on `main`.
+  are safe to mark required); the "GitHub configuration as code" requirement extends to
+  cover required-status-check branch protection on `main`; and the "Keyless
+  GitHub-to-GCP authentication" requirement's least-privilege IAM grows by one read-only
+  role (`serviceUsageViewer`) so `tofu plan` can actually complete.
 
 ## Impact
 
@@ -46,8 +53,12 @@ required would break every doc-only or infra-only PR (GitHub issue #73).
 - `infra/modules/github-repo/main.tf` (and its `variables.tf`/callers as needed): new
   `github_branch_protection` (or ruleset-based equivalent) resource requiring the `lint`
   and `core-slm-smoke` (en/pl) checks on `main`.
+- `infra/modules/wif/main.tf`: new `google_project_iam_member` granting the runner SA
+  `roles/serviceusage.serviceUsageViewer`.
+- `.github/workflows/infra-plan.yml`: fixed a pre-existing bug (missing
+  `TF_VAR_tfstate_bucket` in the `tofu plan` step's env) that surfaced while verifying
+  this change — unrelated to path-filtering, but blocking either way.
 - No change to `skill-ci-nightly.yml` (unaffected — it's schedule-triggered, not
   path-filtered).
-- Applying the branch-protection change requires a maintainer `tofu apply` (or
-  equivalent manual GitHub Settings change if IaC isn't applied yet) — this proposal
-  does not apply it automatically.
+- Applying the branch-protection change and the new IAM grant both require a maintainer
+  `tofu apply` — this proposal does not apply either automatically.

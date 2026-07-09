@@ -37,10 +37,24 @@ resource "google_service_account_iam_member" "wif_impersonation" {
 
 # Least-privilege: the only thing GitHub Actions does in GCP is read/write the
 # OpenTofu remote state, so the runner gets object read/write on the state bucket
-# and nothing else. No project-level roles, no Cloud Run / Artifact Registry /
-# Secret Manager — those were dropped with the GPU eval runner.
+# plus (below) read-only visibility into enabled project services — no write/create
+# grants on any project resource, no Cloud Run / Artifact Registry / Secret Manager —
+# those were dropped with the GPU eval runner.
 resource "google_storage_bucket_iam_member" "runner_state" {
   bucket = var.tfstate_bucket
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.runner.email}"
+}
+
+# `tofu plan` refreshes every managed resource's live state before diffing,
+# including the root module's google_project_service resources — that read needs
+# project-level serviceusage visibility, which no other grant here provides.
+# `serviceUsageViewer` is read-only (list/get enabled services only; it cannot
+# enable, disable, or otherwise write anything), so this doesn't reopen the door
+# the state-bucket-only design closed — CI still can't create or configure any
+# project resource, it can only see which APIs are already enabled (#73).
+resource "google_project_iam_member" "runner_service_usage_viewer" {
+  project = var.project_id
+  role    = "roles/serviceusage.serviceUsageViewer"
+  member  = "serviceAccount:${google_service_account.runner.email}"
 }

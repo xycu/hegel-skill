@@ -89,3 +89,42 @@ wedging pull requests that don't touch the watched paths.
 - **WHEN** any pull request is opened, regardless of the paths it touches
 - **THEN** each required check SHALL reach a terminal state (success or failure)
 - **AND** none SHALL remain in `Pending` indefinitely.
+
+### Requirement: Keyless GitHub-to-GCP authentication
+
+The plan workflow SHALL authenticate to GCP via Workload Identity Federation (OIDC). The
+system SHALL NOT store long-lived service-account keys in the repository, in CI secrets,
+or in IaC state. The federated principal SHALL hold least-privilege IAM — read/write to
+the state bucket, plus read-only visibility into enabled project services
+(`roles/serviceusage.serviceUsageViewer`) so a plan can refresh those resources — with no
+write or enable/disable permission over project services, and no Cloud Run, Artifact
+Registry, or Secret Manager grants.
+
+#### Scenario: CI authenticates without stored keys
+
+- **GIVEN** a CI workflow that needs to read or write IaC state
+- **WHEN** the workflow authenticates to GCP
+- **THEN** it SHALL exchange a GitHub OIDC token through the Workload Identity provider
+- **AND** no service-account JSON key SHALL be required.
+
+#### Scenario: Federation is scoped to this repository
+
+- **GIVEN** the Workload Identity provider configuration
+- **WHEN** an OIDC token is presented
+- **THEN** the provider SHALL only trust tokens issued for this repository.
+
+#### Scenario: Plan is reviewable on a pull request
+
+- **GIVEN** a change to the IaC under review
+- **WHEN** the pull-request workflow runs
+- **THEN** it SHALL produce an OpenTofu plan
+- **AND** the plan SHALL be visible on the pull request before any apply.
+
+#### Scenario: Plan can read project service state without broader grants
+
+- **GIVEN** the root module declares `google_project_service` resources
+- **WHEN** `tofu plan` refreshes their live state
+- **THEN** the federated principal's `serviceUsageViewer` role SHALL be sufficient to read
+  them
+- **AND** the principal SHALL NOT be able to enable, disable, or otherwise modify any
+  project service.

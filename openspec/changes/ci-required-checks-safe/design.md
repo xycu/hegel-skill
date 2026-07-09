@@ -82,6 +82,28 @@ change). This also fixes the release-please PR case for free: those PRs already 
 required, that job-level skip must resolve as passing — which it does under this
 semantics, so release-please PRs keep merging without a special case (relevant to #66).
 
+**5. Grant the runner SA read-only `serviceUsageViewer`, discovered while verifying this
+change's own `infra/**` diff.** `infra-plan.yml` had never actually completed a `tofu
+plan` before this change — every prior PR touching `infra/**` ran before the WIF bootstrap
+variables existed, so the job's `if: vars.GCP_WORKLOAD_IDENTITY_PROVIDER != ''` guard
+always evaluated false and the job was skipped outright. This change's own PR is the first
+real execution, and it failed: `tofu plan` refreshes every managed resource's live state,
+including the root module's `google_project_service` resources, which needs project-level
+`serviceusage.services.get` — a permission the runner SA never had (it's scoped to
+state-bucket object access only, per the existing "Keyless GitHub-to-GCP authentication"
+requirement). Two ways to fix this were weighed:
+- **Chosen: add `roles/serviceusage.serviceUsageViewer`** (read-only; cannot enable,
+  disable, or otherwise write anything) to the runner SA. Small, additive, keeps the
+  single `infra/` config/state and its automatic plan-on-PR drift detection intact for
+  every resource, including the bootstrap ones.
+- **Rejected: split `google_project_service` + `module.wif` into a separately-applied,
+  maintainer-only config**, leaving only `module.github_repo` in the CI-planned state.
+  This would have kept the "state bucket only" grant completely untouched, but it's a
+  real state-splitting refactor with migration risk, and it would have **removed**
+  automatic drift detection for the bootstrap resources (no CI plan would ever touch
+  them again) — a regression against the "Drift is detectable" scenario for exactly the
+  resources that are hardest to hand-verify.
+
 ## Risks / Trade-offs
 
 - **[Risk]** A future path added to `skills/**` etc. that should trigger CI but is missed

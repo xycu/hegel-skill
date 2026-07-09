@@ -40,8 +40,11 @@
       Do not include canary legs or `aggregate-eval-comment`. (Contexts used are the job
       *names* — `Deterministic skill lint`, `Core SLM smoke (en)`, `Core SLM smoke (pl)`
       — since that's what GitHub matches status checks on.)
-- [ ] 3.3 Open a PR touching `infra/**` so `infra-plan.yml` posts the `tofu plan` output;
+- [x] 3.3 Open a PR touching `infra/**` so `infra-plan.yml` posts the `tofu plan` output;
       confirm the plan shows exactly the intended new resource with no unrelated diffs.
+      Confirmed on PR #135 once 5.1/5.2 unblocked the plan: `Plan: 1 to add, 1 to change`
+      — the new `required_status_checks` ruleset plus an unrelated pre-existing drift on
+      `evals` reviewers, nothing else.
 - [ ] 3.4 Hand off to the maintainer to run `tofu apply` (existing manual-apply process —
       out of scope for this change to automate).
 
@@ -53,3 +56,17 @@
       merges without manual intervention now that the checks are required.
 - [ ] 4.3 Update `openspec/specs/ci-infrastructure/spec.md` is left to the archive step
       (`/opsx:archive`) — no manual edit needed here.
+
+## 5. GCP IAM fix for infra-plan (discovered while verifying task 3.3)
+
+- [x] 5.1 Fix `.github/workflows/infra-plan.yml`: the `tofu plan` step's env was missing
+      `TF_VAR_tfstate_bucket`, so every `infra/**` PR errored with "No value for required
+      variable" before ever reaching a real plan. Add
+      `TF_VAR_tfstate_bucket: ${{ vars.GCP_TFSTATE_BUCKET }}`.
+- [x] 5.2 Grant the runner SA `roles/serviceusage.serviceUsageViewer` (read-only) in
+      `infra/modules/wif/main.tf`, so `tofu plan` can refresh the root module's
+      `google_project_service` resources without the broader project-level grants the
+      existing least-privilege design deliberately withholds.
+- [ ] 5.3 Maintainer applies 5.2 by hand (`tofu apply`, same manual process as 3.4 — the
+      runner SA can't grant itself IAM, so this one specifically needs your own gcloud
+      credentials, not just repo-admin GitHub access).
