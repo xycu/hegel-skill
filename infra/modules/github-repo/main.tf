@@ -23,6 +23,45 @@ resource "github_repository_ruleset" "signed_commits" {
   }
 }
 
+# Required status checks on `main` (#73). Contexts are the Skill CI job *names*
+# (github.event check-run names), not the job ids. Only the two jobs that always
+# report a terminal status regardless of changed paths are listed — `skill-ci.yml`'s
+# `paths-filter` job makes both of them post `skipped` (not `pending`) on a PR that
+# doesn't touch skill/eval/tooling paths, so this never wedges an unrelated PR.
+# Canary matrix legs and the eval-results comment job are deliberately excluded:
+# canaries are non-blocking by design, and the comment job is a reporting step, not
+# a gate. `strict_required_status_checks_policy = false` — merging doesn't require
+# the branch to be first updated with `main`; nothing in this change calls for that
+# extra friction.
+resource "github_repository_ruleset" "required_status_checks" {
+  name        = "require-status-checks-main"
+  repository  = var.repository
+  target      = "branch"
+  enforcement = "active"
+
+  conditions {
+    ref_name {
+      include = ["refs/heads/main"]
+      exclude = []
+    }
+  }
+
+  rules {
+    required_status_checks {
+      required_check {
+        context = "Deterministic skill lint"
+      }
+      required_check {
+        context = "Core SLM smoke (en)"
+      }
+      required_check {
+        context = "Core SLM smoke (pl)"
+      }
+      strict_required_status_checks_policy = false
+    }
+  }
+}
+
 # The `evals` deployment gate: a run waits here; one approval releases it.
 # Self-approve is intentionally allowed (prevent_self_review = false).
 resource "github_repository_environment" "evals" {

@@ -6,14 +6,15 @@ on:
   # The full, model-graded suite (all behaviours, both languages, llm-rubric on)
   # runs nightly — see skill-ci-nightly.yml. The whole workflow stays behind a manual
   # approval (the `gate` job's `evals` environment); pushes to main do not run it.
+  #
+  # No `paths:` filter here (deliberately, #73): `lint` and `core-slm-smoke` are
+  # required status checks on `main`, and a required check derived from a
+  # workflow-level `paths:` filter never posts — and so never resolves — on a PR that
+  # doesn't touch those paths, wedging it forever. Instead every PR runs this
+  # workflow, and the `paths-filter` job below decides per-PR whether the gate/lint/
+  # smoke jobs do real work or skip themselves (a `skipped` job still satisfies a
+  # required check).
   pull_request:
-    paths: &skill_paths
-      - 'skills/**'
-      - 'promptfoo/**'
-      - 'tools/**'
-      - '.claude-plugin/**'
-      - 'run-tests.sh'
-      - '.github/workflows/skill-ci.yml'
   workflow_dispatch:
 
 concurrency:
@@ -28,30 +29,66 @@ env:
   CORE_FILTER: "-(dialectical|grief|technical-dismissal)$"
 
 jobs:
+  # Job-level path detection (#73). No checkout needed — dorny/paths-filter reads the
+  # PR's changed files via the GitHub API. This runs ungated, before `gate`, so an
+  # unrelated PR never triggers the `evals` approval prompt: `gate` itself is
+  # job-level skipped below when this reports no match.
+  paths-filter:
+    name: Detect relevant paths
+    runs-on: ubuntu-latest
+    outputs:
+      skill-relevant: ${{ steps.filter.outputs.skill }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            skill:
+              - 'skills/**'
+              - 'promptfoo/**'
+              - 'tools/**'
+              - '.claude-plugin/**'
+              - 'run-tests.sh'
+              - '.github/workflows/skill-ci.yml'
+
   # Manual approval checkpoint for the whole workflow. This job uses the `evals`
   # environment (Settings → Environments → evals → Required reviewers), so it sits
   # "Waiting for review" and NOTHING downstream starts until a maintainer approves.
   # Self-approval is allowed (Prevent self-review is off). Every other job
   # `needs: gate`, so one approval releases the entire run.
+  #
+  # Environment protection rules fire the moment this job is scheduled, before any
+  # step runs — a step-level condition can't dodge the approval prompt. So relevance
+  # is checked here at the job level: an irrelevant PR skips `gate` outright, which
+  # posts a `skipped` status (not `pending`) and never prompts for approval.
   gate:
     name: Approve eval run
     runs-on: ubuntu-latest
     environment: evals
-    # Skip the release-please PR so it never prompts for approval (see lint).
-    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
+    needs: paths-filter
+    # Skip the release-please PR so it never prompts for approval (see lint), and
+    # skip entirely when the PR touches none of the watched paths (#73).
+    if: ${{ needs.paths-filter.outputs.skill-relevant == 'true' && !startsWith(github.head_ref, 'release-please--') }}
     steps:
       - run: echo "Eval run approved — releasing Skill CI jobs."
 
   lint:
     name: Deterministic skill lint
     runs-on: ubuntu-latest
-    needs: gate
+    needs: [paths-filter, gate]
     # Skip the release-please PR. It only bumps version fields under
     # .claude-plugin/** (which matches the paths filter), so it would otherwise
     # trigger this workflow — forcing the Actions manual-approval gate and a
     # pointless eval run on a version-only change (#61). On normal PRs head_ref
     # doesn't start with the prefix, so they still run.
-    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
+    #
+    # `lint` is a required status check (#73), so this condition is written as a
+    # job-level `if:` rather than per-step: a skip here still posts a `skipped`
+    # check under the `lint` job name, which satisfies the requirement instead of
+    # leaving it `pending`. Because a custom `if:` replaces the implicit
+    # needs-must-succeed check, `needs.gate.result == 'success'` is spelled out so a
+    # failed/cancelled `gate` still blocks `lint` from running.
+    if: ${{ needs.paths-filter.outputs.skill-relevant == 'true' && !startsWith(github.head_ref, 'release-please--') && needs.gate.result == 'success' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -70,9 +107,10 @@ jobs:
   core-slm-smoke:
     name: Core SLM smoke (${{ matrix.language }})
     runs-on: ubuntu-latest
-    needs: [gate, lint]
-    # Also skip on the release-please PR (see the lint job).
-    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
+    needs: [paths-filter, gate, lint]
+    # Also skip on the release-please PR and on an irrelevant PR (see the lint job —
+    # same job-level-skip-is-a-satisfied-required-check reasoning applies here).
+    if: ${{ needs.paths-filter.outputs.skill-relevant == 'true' && !startsWith(github.head_ref, 'release-please--') && needs.lint.result == 'success' }}
     # Fast gate: 3 core behaviours, judge off. 30 min is ample headroom; the full
     # graded suite that used to crowd the 90-min envelope now runs nightly.
     timeout-minutes: 30
@@ -200,7 +238,10 @@ jobs:
     name: Eval results comment
     runs-on: ubuntu-latest
     needs: core-slm-smoke
-    if: ${{ always() && github.event_name == 'pull_request' && !startsWith(github.head_ref, 'release-please--') }}
+    # `always()` so a failed gate still gets a comment, but not when core-slm-smoke was
+    # itself skipped (irrelevant PR, #73) — otherwise every unrelated PR would get a
+    # noisy "no eval summaries were produced" fallback comment.
+    if: ${{ always() && github.event_name == 'pull_request' && !startsWith(github.head_ref, 'release-please--') && needs.core-slm-smoke.result != 'skipped' }}
     permissions:
       contents: read
       pull-requests: write  # post / update the single sticky results comment
