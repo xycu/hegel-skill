@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.3](https://github.com/xycu/hegel-skill/compare/v1.10.2...v1.10.3) (2026-07-09)
+
+
+### Bug Fixes
+
+* **persona:** forbid literal fix disclosure in technical-dismissal replies ([#131](https://github.com/xycu/hegel-skill/issues/131)) ([9577c8a](https://github.com/xycu/hegel-skill/commit/9577c8a224562187819619f38fbef7b0ccb9390b))
+
 ## [1.10.2](https://github.com/xycu/hegel-skill/compare/v1.10.1...v1.10.2) (2026-06-28)
 
 
