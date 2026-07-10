@@ -108,9 +108,23 @@ jobs:
     name: Core SLM smoke (${{ matrix.language }})
     runs-on: ubuntu-latest
     needs: [paths-filter, gate, lint]
-    # Also skip on the release-please PR and on an irrelevant PR (see the lint job —
-    # same job-level-skip-is-a-satisfied-required-check reasoning applies here).
-    if: ${{ needs.paths-filter.outputs.skill-relevant == 'true' && !startsWith(github.head_ref, 'release-please--') && needs.lint.result == 'success' }}
+    # UNLIKE `lint` (#73), this job can't skip itself at the job level: it's a
+    # matrix, and GitHub Actions only expands a matrix for a job that actually
+    # runs — a job-level `if: false` skips the job *before* expansion, posting a
+    # single status under the literal unexpanded name
+    # "Core SLM smoke (${{ matrix.language }})" instead of the concrete
+    # "Core SLM smoke (en)" / "Core SLM smoke (pl)" contexts the ruleset actually
+    # requires. Those required contexts then never post at all, and the PR is
+    # blocked forever — the exact wedging bug #73 exists to prevent (found while
+    # verifying #135 with a real "unrelated PR" case, see tasks.md 2.4/hotfix).
+    #
+    # So this job always runs (`!cancelled()`, no `environment:` on this job, so
+    # unlike `gate` there's no approval-prompt risk in scheduling it
+    # unconditionally) and each matrix leg decides at the *step* level, via the
+    # `relevant` step below, whether to do real work. An irrelevant/release-please
+    # PR, or one where `lint` failed, ends up with every real step skipped and the
+    # job trivially `success` — a valid, terminal status under the concrete name.
+    if: ${{ !cancelled() }}
     # Fast gate: 3 core behaviours, judge off. 30 min is ample headroom; the full
     # graded suite that used to crowd the 90-min envelope now runs nightly.
     timeout-minutes: 30
@@ -147,15 +161,28 @@ jobs:
             filter: pl-dialectical
             canary: true
     steps:
+      # Same relevance check `lint` uses at the job level (#73), evaluated once
+      # here per matrix leg instead, since this job can't skip itself as a whole
+      # (see the job-level `if:` comment above). Every step below is gated on
+      # this so an irrelevant PR does no real work and the job still completes
+      # (trivially `success`) under its concrete "Core SLM smoke (en)"/"(pl)" name.
+      - name: Determine relevance
+        id: relevant
+        run: echo "run=${{ needs.paths-filter.outputs.skill-relevant == 'true' && !startsWith(github.head_ref, 'release-please--') && needs.lint.result == 'success' }}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v5
+        if: steps.relevant.outputs.run == 'true'
       - uses: actions/setup-node@v5
+        if: steps.relevant.outputs.run == 'true'
         with:
           node-version: "24"
       - name: Install promptfoo
+        if: steps.relevant.outputs.run == 'true'
         run: npm install -g promptfoo@"${PROMPTFOO_VERSION}"
       - name: Install Ollama
+        if: steps.relevant.outputs.run == 'true'
         run: curl -fsSL https://ollama.com/install.sh | sh
       - name: Start Ollama server
+        if: steps.relevant.outputs.run == 'true'
         run: |
           # The install step may already have started a server; only launch one
           # if the port is free, else `ollama serve` logs "address already in use".
@@ -167,6 +194,7 @@ jobs:
             sleep 1
           done
       - name: Pull model
+        if: steps.relevant.outputs.run == 'true'
         run: ollama pull ${{ matrix.model }}
       # Behavioural gate (en/pl): run promptfoo directly. `-j 1` serves one request
       # at a time so the single CPU-bound Ollama doesn't starve under parallelism
@@ -175,34 +203,35 @@ jobs:
       # only. `--filter-pattern` narrows to the three core behaviours. `promptfoo
       # eval` exits non-zero on any non-pass, so this stays a hard 100% gate.
       - name: Run evals (behavioural gate)
-        if: ${{ matrix.canary != true }}
+        if: ${{ matrix.canary != true && steps.relevant.outputs.run == 'true' }}
         env:
           EVAL_MODEL: ${{ matrix.model }}
           REQUEST_TIMEOUT_MS: "600000"
         run: promptfoo eval -c ${{ matrix.config }} --no-cache -j 1 --filter-pattern "${CORE_FILTER}"
       # Canary: filtered single case on a third-party model; non-blocking, no comment.
       - name: Run canary eval
-        if: ${{ matrix.canary == true }}
+        if: ${{ matrix.canary == true && steps.relevant.outputs.run == 'true' }}
         env:
           EVAL_MODEL: ${{ matrix.model }}
         run: promptfoo eval -c ${{ matrix.config }} --no-cache --filter-pattern ${{ matrix.filter }} --verbose
       # Render the just-run eval to a self-contained HTML report from promptfoo's
-      # local store. `always()` so a failed eval still produces it.
+      # local store. `!cancelled() && relevant` so a failed eval still produces
+      # it, but an irrelevant PR (no eval ever ran) doesn't try and fail this step.
       - name: Render HTML report
-        if: always()
+        if: ${{ !cancelled() && steps.relevant.outputs.run == 'true' }}
         run: promptfoo export eval latest -o promptfoo-report-${{ matrix.language }}.html
       - name: Upload eval report
-        if: always()
+        if: ${{ !cancelled() && steps.relevant.outputs.run == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: promptfoo-report-${{ matrix.language }}
           path: promptfoo-report-${{ matrix.language }}.html
           if-no-files-found: warn
       # Extract a compact pass/fail summary from the same stored eval so the
-      # aggregate job can assemble one combined PR comment. `always()` so a failed
-      # gate still reports its counts.
+      # aggregate job can assemble one combined PR comment. Same relevance gating
+      # as the report steps above.
       - name: Summarize result
-        if: always()
+        if: ${{ !cancelled() && steps.relevant.outputs.run == 'true' }}
         env:
           DISPLAY: ${{ matrix.display }}
           MODEL: ${{ matrix.model }}
@@ -224,7 +253,7 @@ jobs:
             '{label:$label, model:$model, passes:$passes, failures:$failures, errors:$errors, total:$total, blocking:$blocking}' \
             | tee "summary-${{ matrix.language }}.json"
       - name: Upload result summary
-        if: always()
+        if: ${{ !cancelled() && steps.relevant.outputs.run == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: eval-summary-${{ matrix.language }}
@@ -237,11 +266,15 @@ jobs:
   aggregate-eval-comment:
     name: Eval results comment
     runs-on: ubuntu-latest
-    needs: core-slm-smoke
-    # `always()` so a failed gate still gets a comment, but not when core-slm-smoke was
-    # itself skipped (irrelevant PR, #73) — otherwise every unrelated PR would get a
-    # noisy "no eval summaries were produced" fallback comment.
-    if: ${{ always() && github.event_name == 'pull_request' && !startsWith(github.head_ref, 'release-please--') && needs.core-slm-smoke.result != 'skipped' }}
+    needs: [paths-filter, lint, core-slm-smoke]
+    # `always()` so a failed gate still gets a comment. core-slm-smoke no longer
+    # reports `skipped` for an irrelevant PR (matrix jobs can't skip themselves at
+    # the job level and keep their concrete per-leg names posted, see that job's
+    # `if:` comment) — it reports a trivial `success` instead, with every real
+    # step internally skipped. So detecting "was there a real eval to summarize"
+    # needs the same relevance check `core-slm-smoke` uses internally, not
+    # core-slm-smoke's own job result.
+    if: ${{ always() && github.event_name == 'pull_request' && needs.paths-filter.outputs.skill-relevant == 'true' && !startsWith(github.head_ref, 'release-please--') && needs.lint.result == 'success' }}
     permissions:
       contents: read
       pull-requests: write  # post / update the single sticky results comment
