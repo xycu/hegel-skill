@@ -8,9 +8,9 @@ TBD - created by archiving change 2026-06-23-ci-infrastructure-as-code. Update P
 The repository's GitHub configuration SHALL be defined as version-controlled IaC using
 OpenTofu, with remote state held in a versioned GCS bucket, so it is backed up and
 drift-detectable. The system SHALL NOT depend on hand-applied console changes for any
-managed setting. This MUST cover repo settings, branch protection, the signed-commits
-ruleset, the `evals` environment with its reviewers and prevent-self-review setting,
-labels, and Actions variables.
+managed setting. This MUST cover repo settings, branch protection (including required
+status checks on `main`), the signed-commits ruleset, the `evals` environment with its
+reviewers and prevent-self-review setting, labels, and Actions variables.
 
 #### Scenario: Restore reproduces live configuration
 
@@ -32,12 +32,31 @@ labels, and Actions variables.
 - **THEN** the state SHALL be stored in the GCS backend, not on a contributor's machine
 - **AND** the backend bucket SHALL have object versioning enabled.
 
+#### Scenario: Required status checks are backed up as code
+
+- **GIVEN** the `main` branch protection requires the `lint` and `core-slm-smoke` (en/pl)
+  status checks
+- **WHEN** the GitHub configuration is destroyed and re-applied from IaC
+- **THEN** the same status checks SHALL be required on `main` afterward
+- **AND** no maintainer SHALL need to re-configure required checks by hand in the GitHub
+  UI.
+
 ### Requirement: Keyless GitHub-to-GCP authentication
 
 The plan workflow SHALL authenticate to GCP via Workload Identity Federation (OIDC). The
 system SHALL NOT store long-lived service-account keys in the repository, in CI secrets,
-or in IaC state. The federated principal SHALL hold least-privilege IAM — read/write to the
-state bucket only, with no Cloud Run, Artifact Registry, or Secret Manager grants.
+or in IaC state. The federated principal SHALL hold least-privilege IAM — read/write to
+the state bucket, plus read-only visibility into enabled project services
+(`roles/serviceusage.serviceUsageViewer`), basic project metadata (`roles/browser`), its
+own identity infrastructure's metadata (`roles/iam.serviceAccountViewer`,
+`roles/iam.workloadIdentityPoolViewer`), and read-only IAM-policy visibility across the
+project's resources (`roles/iam.securityReviewer`, needed to refresh the state bucket's
+own IAM policy without granting bucket-level `setIamPolicy`) so a plan can refresh those
+resources — with no write or enable/disable permission over project services, no ability
+to impersonate or reconfigure any service account or identity pool beyond itself, no
+ability to set or modify any IAM policy, no ability to read or manage any other project
+resource's data plane, and no Cloud Run, Artifact Registry, or
+Secret Manager grants.
 
 #### Scenario: CI authenticates without stored keys
 
@@ -59,6 +78,15 @@ state bucket only, with no Cloud Run, Artifact Registry, or Secret Manager grant
 - **THEN** it SHALL produce an OpenTofu plan
 - **AND** the plan SHALL be visible on the pull request before any apply.
 
+#### Scenario: Plan can read project service state without broader grants
+
+- **GIVEN** the root module declares `google_project_service` resources
+- **WHEN** `tofu plan` refreshes their live state
+- **THEN** the federated principal's `serviceUsageViewer` role SHALL be sufficient to read
+  them
+- **AND** the principal SHALL NOT be able to enable, disable, or otherwise modify any
+  project service.
+
 ### Requirement: Fast eval gate on every pull request
 
 Every pull request that touches the skill, evals, or tooling SHALL run a fast eval gate:
@@ -66,7 +94,12 @@ the deterministic skill lint plus the three core behaviours (`dialectical`, `gri
 `technical-dismissal`) in English and Polish. The slow model-graded asserts (`llm-rubric`
 and `similar`) SHALL be disabled for this run so it completes well within the runner
 timeout. The run SHALL remain behind the `evals` environment manual-approval gate, and its
-outcome SHALL be posted via the existing sticky eval-results comment.
+outcome SHALL be posted via the existing sticky eval-results comment. Every job that
+contributes to this gate (`lint`, and each blocking `core-slm-smoke` matrix leg) SHALL
+report a terminal GitHub status context — success, skipped, or failure, never left
+unreported in `pending` — on every pull request, regardless of which files the pull
+request changes, so that these checks are safe to mark as required on `main` without
+wedging pull requests that don't touch the watched paths.
 
 #### Scenario: Pull request runs the fast subset
 
@@ -88,6 +121,27 @@ outcome SHALL be posted via the existing sticky eval-results comment.
 - **WHEN** the workflow reaches the eval stage
 - **THEN** it SHALL wait on the `evals` environment for a maintainer's approval before any
   eval runner starts.
+
+#### Scenario: Unrelated pull request satisfies the gate without running it
+
+- **GIVEN** a pull request that changes no path matched by the skill/eval/tooling filter
+- **WHEN** Skill CI runs
+- **THEN** the `lint` job SHALL be skipped at the job level and report a `skipped` status
+  context under its required job name
+- **AND** the `core-slm-smoke` (en/pl) matrix job SHALL remain scheduled (so its matrix
+  legs still expand to their concrete `core-slm-smoke (en)`/`core-slm-smoke (pl)` context
+  names) but SHALL short-circuit its real steps via a step-level relevance check, reporting
+  a `success` status context within seconds
+- **AND** the `evals` environment approval prompt, the lint checks, and the Ollama-backed
+  eval runs SHALL NOT execute.
+
+#### Scenario: Required checks never stay pending
+
+- **GIVEN** the `lint` and `core-slm-smoke` (en/pl) status checks are marked required on
+  `main`
+- **WHEN** any pull request is opened, regardless of the paths it touches
+- **THEN** each required check SHALL reach a terminal state (success or failure)
+- **AND** none SHALL remain in `Pending` indefinitely.
 
 ### Requirement: Nightly full eval suite
 
