@@ -18,14 +18,36 @@
 
 ## 2. Verification of path-gated behavior
 
-- [ ] 2.1 Open a throwaway PR touching only `promptfoo/**` and confirm `skill-ci.yml`
+- [x] 2.1 Open a throwaway PR touching only `promptfoo/**` and confirm `skill-ci.yml`
       runs exactly as before (approval gate, lint, both core-slm-smoke legs execute).
+      PR #135 itself satisfies this: it touches `.github/workflows/skill-ci.yml` (also a
+      watched path), and the approval gate, lint, and both `core-slm-smoke` legs all ran
+      for real (with two transient per-run flakes, see below — cleared on rerun, not a
+      path-filter issue).
 - [ ] 2.2 Open a throwaway PR touching only an unwatched path (e.g. a `README.md` typo
       fix) and confirm `lint` and `core-slm-smoke (en)`/`(pl)` report success within
-      seconds, with no `evals` approval prompt and no Ollama pull.
+      seconds, with no `evals` approval prompt and no Ollama pull. Not yet done — PR #135
+      can't self-test this leg, since every commit on this branch touches `skill-ci.yml`
+      itself (a watched path), so `skill-relevant` has stayed `true` for the PR's whole
+      lifetime. Needs a separate, short-lived throwaway PR as a fast follow-up.
 - [ ] 2.3 Confirm via `gh pr checks <PR>` that status context names for `lint` and
       `core-slm-smoke (en)`/`(pl)` are identical between the full-run and short-circuited
-      cases.
+      cases. Blocked on 2.2.
+
+- [x] 2.4 Investigate the two `core-slm-smoke` failures observed on PR #135's real run
+      (`en` and `pl` both failed with 0 completion tokens and abnormally short latency,
+      ~75-120s vs. the ~400s+ a real generation takes). Confirmed transient: a plain
+      rerun of each job passed with no code change. The Bielik canary leg in the same run
+      showed the likely underlying cause directly in its `--verbose` log — repeated
+      `Request timed out after 300000 ms` / `AbortError: This operation was aborted` from
+      running `-j 4` concurrent Ollama requests (a 7B model, `num_ctx: 12288`,
+      `num_predict: 1600`) against one CPU-bound GitHub-hosted runner. The blocking en/pl
+      legs use `-j 1` and are less exposed, but the runner is shared/variable-load
+      infrastructure, so an occasional stall producing an empty completion is plausible
+      there too. Not a regression from this PR (no skill/prompt content changed) and not
+      a required-check-safety issue (failures were terminal `failure`, not stuck
+      `pending`) — but worth a follow-up issue if `core-slm-smoke` flakes repeatedly
+      once this merges.
 
 ## 3. Required status checks as code
 
@@ -45,16 +67,19 @@
       Confirmed on PR #135 once 5.1/5.2 unblocked the plan: `Plan: 1 to add, 1 to change`
       — the new `required_status_checks` ruleset plus an unrelated pre-existing drift on
       `evals` reviewers, nothing else.
-- [ ] 3.4 Hand off to the maintainer to run `tofu apply` (existing manual-apply process —
-      out of scope for this change to automate).
+- [x] 3.4 Hand off to the maintainer to run `tofu apply` (existing manual-apply process —
+      out of scope for this change to automate). Applied — the `required_status_checks`
+      ruleset is live on `main` (id=18742306), confirmed by a subsequent `tofu plan`
+      reporting "No changes. Your infrastructure matches the configuration."
 
 ## 4. Post-apply confirmation
 
 - [ ] 4.1 After apply, open a throwaway PR that intentionally fails `lint` (or a core
-      behaviour) and confirm the PR is blocked from merging.
+      behaviour) and confirm the PR is blocked from merging. Not yet done — deferred to
+      the same fast follow-up as 2.2/2.3, now that the ruleset is live on `main`.
 - [ ] 4.2 Re-run the unwatched-path PR from 2.2 (or a fresh equivalent) and confirm it
-      merges without manual intervention now that the checks are required.
-- [ ] 4.3 Update `openspec/specs/ci-infrastructure/spec.md` is left to the archive step
+      merges without manual intervention now that the checks are required. Blocked on 2.2.
+- [x] 4.3 Update `openspec/specs/ci-infrastructure/spec.md` is left to the archive step
       (`/opsx:archive`) — no manual edit needed here.
 
 ## 5. GCP IAM fix for infra-plan (discovered while verifying task 3.3)
@@ -92,5 +117,9 @@
       `roles/iam.securityReviewer` instead — genuinely read-only (Google's purpose-built
       "view IAM policies across resources" role) — over granting bucket-level write
       capability just to unblock a read. Added in `infra/modules/wif/main.tf`.
-- [ ] 5.8 Maintainer applies 5.7 by hand; re-verify `infra-plan.yml` goes green on PR #135,
+- [x] 5.8 Maintainer applies 5.7 by hand; re-verify `infra-plan.yml` goes green on PR #135,
       and re-check whether the `workloadIdentityPools.get` 403 has cleared (propagation).
+      Confirmed: both propagation-delayed 403s cleared, and `infra-plan.yml`'s `plan` job
+      now reports "No changes. Your infrastructure matches the configuration." — every
+      resource, including `module.wif`'s own IAM grants and the state bucket's IAM
+      policy, refreshes cleanly under the restricted CI identity.
