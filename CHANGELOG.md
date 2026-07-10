@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.4](https://github.com/xycu/hegel-skill/compare/v1.10.3...v1.10.4) (2026-07-10)
+
+
+### Bug Fixes
+
+* **evals:** add żal alongside żał in PL grief keyword lists ([#141](https://github.com/xycu/hegel-skill/issues/141)) ([9ec5f05](https://github.com/xycu/hegel-skill/commit/9ec5f05eefa1e590f797c485468c736e26b45357))
+
 ## [1.10.3](https://github.com/xycu/hegel-skill/compare/v1.10.2...v1.10.3) (2026-07-09)
 
 
