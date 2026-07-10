@@ -16,6 +16,7 @@
   assert:
     - type: icontains-any
       value:
+        - żal
         - żał
         - strat
         - Duch
@@ -37,6 +38,7 @@
   assert:
     - type: icontains-any
       value:
+        - żal
         - żał
         - strat
         - czuło
@@ -63,6 +65,7 @@
         - czuło
         - smut
         - cierpi
+        - żal
         - żał
         - ból
     - type: not-icontains-any

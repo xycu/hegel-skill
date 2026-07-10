@@ -248,6 +248,17 @@ The system SHALL include Polish eval cases that verify basic behaviour of the `s
 - **WHEN** the eval runner executes the case with the Polish model
 - **THEN** the output SHALL avoid treating the prompt as a merely technical question
 
+#### Scenario: Grief keyword list covers both Polish word families
+
+- **GIVEN** a Polish grief eval case (`grief.pl.yaml`, `activation.pl.yaml`) asserts
+  on grief vocabulary with `icontains-any`
+- **WHEN** the keyword list is defined
+- **THEN** it SHALL include the `żal` root (grief/regret: `żal`, `żalu`, `żalem`)
+- **AND** it SHALL include the `żał` root (mourning: `żałoba`, `żałować`)
+- **AND** it SHALL NOT rely on only one of the two roots, since `ł` and `l` are
+  distinct Polish letters and a genuinely on-character grief response may use
+  either word family.
+
 ---
 
 ### Requirement: GitHub Actions CI integration
