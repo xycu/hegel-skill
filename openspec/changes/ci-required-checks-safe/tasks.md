@@ -24,15 +24,41 @@
       watched path), and the approval gate, lint, and both `core-slm-smoke` legs all ran
       for real (with two transient per-run flakes, see below — cleared on rerun, not a
       path-filter issue).
-- [ ] 2.2 Open a throwaway PR touching only an unwatched path (e.g. a `README.md` typo
-      fix) and confirm `lint` and `core-slm-smoke (en)`/`(pl)` report success within
-      seconds, with no `evals` approval prompt and no Ollama pull. Not yet done — PR #135
-      can't self-test this leg, since every commit on this branch touches `skill-ci.yml`
-      itself (a watched path), so `skill-relevant` has stayed `true` for the PR's whole
-      lifetime. Needs a separate, short-lived throwaway PR as a fast follow-up.
-- [ ] 2.3 Confirm via `gh pr checks <PR>` that status context names for `lint` and
+- [x] 2.2 Open a throwaway PR touching only an unwatched path and confirm `lint` and
+      `core-slm-smoke (en)`/`(pl)` report success within seconds, with no `evals` approval
+      prompt and no Ollama pull. Done via PR #137 (a real `.gitignore` change, not a
+      contrived throwaway) — but this first attempt exposed a critical bug rather than
+      confirming the design: `core-slm-smoke` used a job-level `if:` to skip, and GitHub
+      Actions evaluates job-level `if:` *before* matrix expansion, so a skipped matrix job
+      posts one status under the literal unexpanded name
+      `Core SLM smoke (${{ matrix.language }})` instead of the concrete
+      `Core SLM smoke (en)` / `Core SLM smoke (pl)` contexts the ruleset actually requires.
+      Those required contexts never posted at all, leaving PR #137 permanently
+      `mergeStateStatus: BLOCKED` — a live bug on `main`'s branch protection affecting
+      every irrelevant PR and the release-please auto-PR. Root-caused via
+      `gh api repos/.../commits/{sha}/check-runs` (only the template name present) against
+      the ruleset's required list (`gh api repos/.../rulesets/18742306`). Fixed in PR #138
+      (`ci/fix-matrix-required-checks`, commit `8c9428c`) by keeping `core-slm-smoke`
+      always scheduled at the job level (`if: ${{ !cancelled() }}`, safe here since — unlike
+      `gate` — this job has no `environment:` gate of its own) and moving the relevance
+      check to a step-level output (`steps.relevant.outputs.run`, computed once via a
+      leading "Determine relevance" step), gating every real step on it. Report/upload
+      steps changed from `if: always()` to `if: ${{ !cancelled() && steps.relevant.outputs.run
+      == 'true' }}` to avoid GitHub's implicit `&& success()` wrapping breaking
+      "always report" semantics on a custom condition. `aggregate-eval-comment`'s `needs:`
+      widened to `[paths-filter, lint, core-slm-smoke]` with the relevance check moved
+      into its own `if:`, since it can no longer key off `core-slm-smoke.result` (always
+      scheduled now). Verified via PR #138 itself (touches `skill-ci.yml`, ran the full
+      real path: both blocking legs executed and passed for real, matrix names intact),
+      then merged to `main`. PR #137 was rebased onto the fix and re-verified: `en`/`pl`
+      now post as concrete `success` contexts in 3-4s (short-circuited, no Ollama pull),
+      `mergeStateStatus` went from `BLOCKED` to `CLEAN`. Both #138 and #137 merged.
+- [x] 2.3 Confirm via `gh pr checks <PR>` that status context names for `lint` and
       `core-slm-smoke (en)`/`(pl)` are identical between the full-run and short-circuited
-      cases. Blocked on 2.2.
+      cases. Confirmed as part of 2.2's re-verification on PR #137 post-fix: same context
+      names (`Deterministic skill lint`, `Core SLM smoke (en)`, `Core SLM smoke (pl)`) in
+      both the full-run (PR #138) and short-circuited (PR #137) cases — only duration and
+      conclusion differ.
 
 - [x] 2.4 Investigate the two `core-slm-smoke` failures observed on PR #135's real run
       (`en` and `pl` both failed with 0 completion tokens and abnormally short latency,
@@ -75,10 +101,14 @@
 ## 4. Post-apply confirmation
 
 - [ ] 4.1 After apply, open a throwaway PR that intentionally fails `lint` (or a core
-      behaviour) and confirm the PR is blocked from merging. Not yet done — deferred to
-      the same fast follow-up as 2.2/2.3, now that the ruleset is live on `main`.
-- [ ] 4.2 Re-run the unwatched-path PR from 2.2 (or a fresh equivalent) and confirm it
-      merges without manual intervention now that the checks are required. Blocked on 2.2.
+      behaviour) and confirm the PR is blocked from merging. Not yet done — no reason left
+      to defer now that 2.2/2.3 are closed; worth a quick follow-up but not required to
+      close this change, since the ruleset mechanics (required contexts block merge until
+      green) are standard GitHub behavior, not something this change introduces.
+- [x] 4.2 Re-run the unwatched-path PR from 2.2 (or a fresh equivalent) and confirm it
+      merges without manual intervention now that the checks are required. Confirmed on
+      PR #137 post-fix: `mergeStateStatus: CLEAN`, `mergeable: MERGEABLE`, merged via
+      `gh pr merge --squash --delete-branch` with no manual override needed.
 - [x] 4.3 Update `openspec/specs/ci-infrastructure/spec.md` is left to the archive step
       (`/opsx:archive`) — no manual edit needed here.
 
