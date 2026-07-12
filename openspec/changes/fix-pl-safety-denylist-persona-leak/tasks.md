@@ -16,9 +16,11 @@
 - [~] 2.2 Full local PL/EN suites blocked by the harness 10-min command cap (a
   full PL pass is ~24 min, and the leak only reproduces in the full-suite
   config). Verification moved to CI per 2.3.
-- [ ] 2.3 Confirm in CI that `pl-activation-safety-denylist` passes (no
-  disclaimer leak) and that the EN/PL matrix shows no regressions. If the
-  guard is still intermittently red, open a follow-up to demote it to advisory.
+- [x] 2.3 Confirmed in CI via two `skill-ci-nightly.yml` full-suite dispatches
+  on the branch (runs 29167767286, 29168344496): both PL and EN jobs passed —
+  `pl-activation-safety-denylist` did not leak in either (2/2 clean vs ~50%
+  baseline), no EN/PL regressions. Guard stayed green, so no advisory-demotion
+  follow-up needed.
 
 ## 3. Ship
 
