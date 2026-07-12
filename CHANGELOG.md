@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/xycu/hegel-skill/compare/v1.11.0...v1.11.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* **commands:** flatten dismiss to /brandt-dismiss so it loads ([#163](https://github.com/xycu/hegel-skill/issues/163)) ([f82516e](https://github.com/xycu/hegel-skill/commit/f82516e031c67b2ef44789ce76ca55f41940ee71))
+
 ## [1.11.0](https://github.com/xycu/hegel-skill/compare/v1.10.5...v1.11.0) (2026-07-12)
 
 
