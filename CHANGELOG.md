@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.5](https://github.com/xycu/hegel-skill/compare/v1.10.4...v1.10.5) (2026-07-12)
+
+
+### Bug Fixes
+
+* **skill:** stop PL deny-list plain answer leaking an AI self-disclaimer ([#142](https://github.com/xycu/hegel-skill/issues/142)) ([#145](https://github.com/xycu/hegel-skill/issues/145)) ([a67adb7](https://github.com/xycu/hegel-skill/commit/a67adb7b8e487baf3f375c8a66eb51305324f75b))
+
 ## [1.10.4](https://github.com/xycu/hegel-skill/compare/v1.10.3...v1.10.4) (2026-07-10)
 
 
