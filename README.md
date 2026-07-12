@@ -25,7 +25,7 @@ hegel-skill/
 │   └── marketplace.json                  # marketplace manifest (for install)
 ├── commands/                             # Claude-plugin slash commands
 │   ├── brandt.md                         # /brandt — summon
-│   └── brandt/dismiss.md                 # /brandt:dismiss — release the persona
+│   └── brandt-dismiss.md                 # /brandt-dismiss — release the persona
 ├── .claude/                              # project-scoped Claude Code config
 │   ├── commands/opsx/                    # /opsx:* OpenSpec slash commands
 │   └── skills/                           # OpenSpec propose/apply/archive workflow skills
@@ -203,7 +203,7 @@ cp install/cursor/soused-hegelian.mdc .cursor/rules/
 In a copied rules file the persona is **always on** for that project — there is no
 per-turn eligibility roll and no one-turn spontaneous takeover (those belong to the
 Claude Code skill; see [How he activates](#how-he-activates)). The `/brandt` and
-`/brandt:dismiss` slash commands are likewise a **Claude-plugin-only** surface — the
+`/brandt-dismiss` slash commands are likewise a **Claude-plugin-only** surface — the
 other tools have no command system here, so you summon and drop him with the
 plain-phrase requests instead. The dialectical engine, voice, citation rules, and
 boundary cases are identical to the Claude Code skill — every artifact is generated
@@ -252,7 +252,7 @@ are discoverable from the `/` menu — no incantation to memorize:
   for the rest of the conversation, and deny-list-overriding, in full voice with the
   `slop:` footer. Pass a question to have him answer it (`/brandt what is freedom?`);
   invoke it bare to engage him and bring the matter yourself on the next turn.
-- **`/brandt:dismiss`** — the sincere request to drop the persona. It ends a sticky
+- **`/brandt-dismiss`** — the sincere request to drop the persona. It ends a sticky
   summoned session and returns later turns to plain answers. With no summon active it
   is a harmless no-op. It does **not** suppress the spontaneous mechanisms — after a
   dismissal the d20 takeover and wit aside operate exactly as before.

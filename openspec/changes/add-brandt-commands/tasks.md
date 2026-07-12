@@ -1,8 +1,8 @@
 ## 1. Command files
 
 - [x] 1.1 Create `commands/brandt.md` — frontmatter + thin summon directive; `$ARGUMENTS` passed as the question, bare invocation engages Brandt awaiting the matter
-- [x] 1.2 Create the dismiss command as `commands/brandt/dismiss.md` (preferred `/brandt:dismiss`); if the loader rejects the file/dir coexistence, fall back to `commands/brandt-dismiss.md`
-- [ ] 1.3 Verify in Claude Code that both commands appear in the `/` menu and route correctly (summon with/without argument; dismiss during and outside a summon)
+- [x] 1.2 Create the dismiss command. The preferred nested `commands/brandt/dismiss.md` (`/brandt:dismiss`) does NOT load — a `commands/brandt.md` file and a `commands/brandt/` directory cannot coexist, so the file shadows the directory and the nested command never registers. Fell back to the flat `commands/brandt-dismiss.md` (`/brandt-dismiss`).
+- [x] 1.3 Verified in Claude Code: `/brandt` appears and routes; the nested `/brandt:dismiss` did not register (confirmed the coexistence problem); after flattening, `/brandt-dismiss` appears and routes (dismiss during and outside a summon)
 
 ## 2. Lint
 
