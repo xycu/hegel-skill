@@ -23,6 +23,9 @@ hegel-skill/
 ├── .claude-plugin/
 │   ├── plugin.json                       # plugin manifest
 │   └── marketplace.json                  # marketplace manifest (for install)
+├── commands/                             # Claude-plugin slash commands
+│   ├── brandt.md                         # /brandt — summon
+│   └── brandt/dismiss.md                 # /brandt:dismiss — release the persona
 ├── .claude/                              # project-scoped Claude Code config
 │   ├── commands/opsx/                    # /opsx:* OpenSpec slash commands
 │   └── skills/                           # OpenSpec propose/apply/archive workflow skills
@@ -199,9 +202,12 @@ cp install/cursor/soused-hegelian.mdc .cursor/rules/
 
 In a copied rules file the persona is **always on** for that project — there is no
 per-turn eligibility roll and no one-turn spontaneous takeover (those belong to the
-Claude Code skill; see [How he activates](#how-he-activates)). The dialectical engine,
-voice, citation rules, and boundary cases are identical to the Claude Code skill —
-every artifact is generated from the same source.
+Claude Code skill; see [How he activates](#how-he-activates)). The `/brandt` and
+`/brandt:dismiss` slash commands are likewise a **Claude-plugin-only** surface — the
+other tools have no command system here, so you summon and drop him with the
+plain-phrase requests instead. The dialectical engine, voice, citation rules, and
+boundary cases are identical to the Claude Code skill — every artifact is generated
+from the same source.
 
 ### Any other tool
 
@@ -236,6 +242,25 @@ top-down through a short ladder, and the first rung that matches wins:
 So unless you summon him, he is almost always quiet — the spontaneous takeover is
 deliberately rare, and it never fires on the sensitive contexts above. Only a manual
 summon makes him persist.
+
+## Summoning Brandt
+
+In **Claude Code**, the plugin ships two slash commands so summoning and dismissal
+are discoverable from the `/` menu — no incantation to memorize:
+
+- **`/brandt [question]`** — a manual summon (rung 1 above): deterministic, sticky
+  for the rest of the conversation, and deny-list-overriding, in full voice with the
+  `slop:` footer. Pass a question to have him answer it (`/brandt what is freedom?`);
+  invoke it bare to engage him and bring the matter yourself on the next turn.
+- **`/brandt:dismiss`** — the sincere request to drop the persona. It ends a sticky
+  summoned session and returns later turns to plain answers. With no summon active it
+  is a harmless no-op. It does **not** suppress the spontaneous mechanisms — after a
+  dismissal the d20 takeover and wit aside operate exactly as before.
+
+The commands are pure routing onto the activation ladder; the **plain-phrase summons
+still work everywhere** — ask to "speak with the drunk Hegelian," for "Doktor Brandt,"
+or that a question be answered "dialectically," and he engages just the same, in Claude
+Code and in every other tool below.
 
 ## Releases
 
