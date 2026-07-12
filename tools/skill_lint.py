@@ -17,6 +17,19 @@ REFERENCE = ROOT / "skills" / "soused-hegelian" / "references" / "hegel-referenc
 PLUGIN_JSON = ROOT / ".claude-plugin" / "plugin.json"
 MARKETPLACE_JSON = ROOT / ".claude-plugin" / "marketplace.json"
 
+# Plugin command surface (add-brandt-commands). The summon command is fixed at
+# commands/brandt.md; the dismiss command ships in the preferred nested form
+# (commands/brandt/dismiss.md → /brandt:dismiss) or, if the loader rejects the
+# file/dir coexistence, the flat fallback (commands/brandt-dismiss.md). Both must
+# exist and carry well-formed frontmatter with a description; the commands are thin
+# vehicles over the activation ladder, so no body content is asserted here.
+COMMANDS_DIR = ROOT / "commands"
+SUMMON_COMMAND = COMMANDS_DIR / "brandt.md"
+DISMISS_COMMANDS = [
+    COMMANDS_DIR / "brandt" / "dismiss.md",
+    COMMANDS_DIR / "brandt-dismiss.md",
+]
+
 # Per-tool install artifacts (#43). Each generated artifact MUST exist at its
 # agreed path, so deleting or renaming one fails the lint. This is the presence
 # contract; content/version drift is guarded separately by
@@ -71,6 +84,26 @@ def lint() -> list[str]:
     for rel in INSTALL_ARTIFACTS:
         if not (ROOT / rel).exists():
             errors.append(f"missing install artifact: {rel}")
+
+    command_files: list[Path] = []
+    if SUMMON_COMMAND.exists():
+        command_files.append(SUMMON_COMMAND)
+    else:
+        errors.append(f"missing command file: {SUMMON_COMMAND.relative_to(ROOT)}")
+    dismiss = next((p for p in DISMISS_COMMANDS if p.exists()), None)
+    if dismiss is None:
+        expected = " or ".join(str(p.relative_to(ROOT)) for p in DISMISS_COMMANDS)
+        errors.append(f"missing dismiss command file: expected {expected}")
+    else:
+        command_files.append(dismiss)
+
+    for path in command_files:
+        rel = path.relative_to(ROOT)
+        fm = parse_frontmatter(path.read_text(encoding="utf-8"))
+        if fm is None:
+            errors.append(f"{rel}: missing standalone YAML frontmatter delimiters")
+        elif not re.search(r"^description:", fm, re.MULTILINE):
+            errors.append(f"{rel} frontmatter: missing 'description'")
 
     if not SKILL.exists():
         return errors  # nothing more to check without the file
