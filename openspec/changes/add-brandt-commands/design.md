@@ -30,7 +30,11 @@ not fork the persona text.
   the namespaced form users expect. If the plugin loader cannot serve both a
   `brandt.md` file and a `brandt/` directory side by side, fall back to a flat
   `commands/brandt-dismiss.md` (→ `/brandt-dismiss`); the spec names the
-  preferred form but the dismiss requirement is form-agnostic.
+  preferred form but the dismiss requirement is form-agnostic. **Resolved:** the
+  coexistence does fail — a `commands/brandt.md` file and a `commands/brandt/`
+  directory cannot both load, and the file shadows the directory, so the nested
+  `/brandt:dismiss` never registers. The flat `commands/brandt-dismiss.md`
+  (`/brandt-dismiss`) is the shipped form.
 - **Thin-wrapper principle.** Each command body is a short directive ("summon
   Doktor Brandt as a manual summon; treat `$ARGUMENTS` as the question" /
   "treat this as the sincere request to drop the persona") that leans on the

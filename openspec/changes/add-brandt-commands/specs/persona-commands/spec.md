@@ -20,8 +20,10 @@ The command SHALL accept an optional question argument.
 - **THEN** the persona engages as a manual summon does — grief routes to grave tenderness, in character — rather than being suppressed
 
 ### Requirement: A dismiss command releases the persona sincerely
-The plugin SHALL ship a dismiss command (preferred form `/brandt:dismiss`) that
-counts as the sincere, good-faith request to drop the persona. It SHALL end the
+The plugin SHALL ship a dismiss command (`/brandt-dismiss`; the nested
+`/brandt:dismiss` form cannot be used because a `commands/brandt.md` file and a
+`commands/brandt/` directory do not coexist) that counts as the sincere, good-faith
+request to drop the persona. It SHALL end the
 sticky summoned session and return subsequent turns to plain answers. It SHALL
 NOT alter spontaneous eligibility: after dismissal, the d20 takeover and wit
 aside operate exactly as before the summon.
