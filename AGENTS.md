@@ -257,14 +257,16 @@ type is derived from the Conventional Commit type of each squash subject (`fix:`
   always match. release-please updates all three via `extra-files` (a single `$..version`
   jsonpath covers both marketplace fields); `tools/version_check.py` is the independent
   drift guard wired into the `skill-ci` lint job — it fails CI if they diverge.
-- **Signing.** The automation uses the default `GITHUB_TOKEN`; its commits/merge/tag are
-  API-created, so GitHub web-flow-signs them as "Verified" and the #12 ruleset is satisfied
-  with no GitHub App. **Caveat:** `GITHUB_TOKEN`-authored events don't trigger other
-  workflows, so the release PR won't auto-run `skill-ci`/drift even though it edits
-  `.claude-plugin/**`. To stop that from deadlocking the bot's release PR, `main`'s branch
-  protection requires **no status checks** — the checks still run and stay visible on PRs
-  and on push-to-`main`, just non-blocking; the release PR is gated by required review plus
-  the signing ruleset. The `release.yml` job is self-contained for the same reason.
+- **Signing & checks.** The automation authenticates with the `GH_ADMIN_TOKEN` PAT (#66);
+  its commits/merge/tag are API-created, so GitHub web-flow-signs them as "Verified" —
+  regardless of the token — and the #12 ruleset is satisfied with no GitHub App. Because the
+  release PR is authored by a PAT rather than the default `GITHUB_TOKEN` (whose events GitHub
+  forbids from triggering further workflow runs), its checks (`skill-ci`/drift, OpenSpec,
+  signed-commits) **run normally** instead of parking as `action_required`. `main`'s branch
+  protection still requires **no status checks** — the release PR is gated by required review
+  plus the signing ruleset — but the checks now actually execute on it, catching e.g. version
+  drift on the one PR that edits `.claude-plugin/**`. The PAT needs `contents:write` +
+  `pull_requests:write`; a `403` in `release.yml` means it lacks that scope.
 - **Baseline.** The pipeline's first release reconciled the stale `0.1.0` to a stable
   `1.0.0` (via a one-time `release-as` bootstrap, since removed); every release after it
   derives its version from the Conventional Commit history, as above.

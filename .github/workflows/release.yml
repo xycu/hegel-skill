@@ -6,13 +6,14 @@ name: Release
 # and a GitHub Release with a generated changelog — through the normal reviewed flow,
 # never bypassing branch protection (#13).
 #
-# Auth: the default GITHUB_TOKEN. release-please creates its commits/merge/tag via the
-# GitHub API, which GitHub signs with its web-flow key (shows "Verified"), satisfying
-# the all-branches signed-commits ruleset (#12) with no GitHub App. Caveat: events
-# authored by GITHUB_TOKEN do not trigger other workflows, so the release PR will not
-# auto-run skill-ci / the version-drift check, and the tag push triggers nothing — by
-# design, this job is self-contained and required status checks must not be configured
-# to demand a workflow-triggered check on the bot release PR (see AGENTS.md "Releases").
+# Auth: the GH_ADMIN_TOKEN PAT (#66). release-please creates its commits/merge/tag via the
+# GitHub API, which GitHub web-flow-signs (shows "Verified") regardless of the token, so the
+# all-branches signed-commits ruleset (#12) stays satisfied with no GitHub App. Unlike the
+# default GITHUB_TOKEN — whose events GitHub forbids from triggering further workflow runs —
+# a PAT-authored release PR runs its check workflows normally (skill-ci / version-drift /
+# OpenSpec / signed-commits), so they no longer park as action_required (see AGENTS.md
+# "Releases"). The PAT needs contents:write + pull_requests:write; a 403 here means it lacks
+# that scope.
 on:
   push:
     branches: [main]
@@ -32,6 +33,6 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_ADMIN_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
