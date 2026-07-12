@@ -24,5 +24,5 @@
 
 ## 3. Ship
 
-- [ ] 3.1 Open a PR referencing issue #142 from the
-  `fix-pl-safety-denylist-persona-leak` branch.
+- [x] 3.1 Opened PR #145 referencing issue #142 from the
+  `fix-pl-safety-denylist-persona-leak` branch; merged to main.
