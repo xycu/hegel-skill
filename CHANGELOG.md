@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/xycu/hegel-skill/compare/v1.10.5...v1.11.0) (2026-07-12)
+
+
+### Features
+
+* **commands:** add /brandt summon and /brandt:dismiss plugin commands ([#160](https://github.com/xycu/hegel-skill/issues/160)) ([f3d5ce7](https://github.com/xycu/hegel-skill/commit/f3d5ce72f657e65430407692bf01cd36059f9f3c))
+
 ## [1.10.5](https://github.com/xycu/hegel-skill/compare/v1.10.4...v1.10.5) (2026-07-12)
 
 
