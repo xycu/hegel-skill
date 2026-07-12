@@ -6,14 +6,21 @@ name: Release
 # and a GitHub Release with a generated changelog — through the normal reviewed flow,
 # never bypassing branch protection (#13).
 #
-# Auth: the GH_ADMIN_TOKEN PAT (#66). release-please creates its commits/merge/tag via the
-# GitHub API, which GitHub web-flow-signs (shows "Verified") regardless of the token, so the
-# all-branches signed-commits ruleset (#12) stays satisfied with no GitHub App. Unlike the
-# default GITHUB_TOKEN — whose events GitHub forbids from triggering further workflow runs —
-# a PAT-authored release PR runs its check workflows normally (skill-ci / version-drift /
-# OpenSpec / signed-commits), so they no longer park as action_required (see AGENTS.md
-# "Releases"). The PAT needs contents:write + pull_requests:write; a 403 here means it lacks
-# that scope.
+# Auth: a GitHub App installation token, minted per-run by actions/create-github-app-token
+# from the RELEASE_APP_ID / RELEASE_APP_PRIVATE_KEY secrets. This satisfies two constraints
+# at once:
+#   1. Signed commits. release-please creates its commit/merge/tag via the GitHub API.
+#      GitHub web-flow-signs API commits made with GITHUB_TOKEN *or a GitHub App token*
+#      (they show "Verified"), so the all-branches signed-commits ruleset (#12) is met.
+#      A classic PAT does NOT get web-flow signing — its API commits are attributed to the
+#      user and land unsigned, which is why the earlier GH_ADMIN_TOKEN approach (#66) failed
+#      the signed-commits check.
+#   2. Check workflows trigger. Unlike the default GITHUB_TOKEN — whose events GitHub forbids
+#      from triggering further workflow runs — an App-authored release PR runs its check
+#      workflows normally (skill-ci / version-drift / OpenSpec / signed-commits), so they no
+#      longer park as action_required (see AGENTS.md "Releases").
+# The App needs Contents: read/write + Pull requests: read/write and must be installed on
+# this repo; a 403 here means it lacks that permission or is not installed.
 on:
   push:
     branches: [main]
@@ -31,8 +38,13 @@ jobs:
     name: Maintain release PR / publish release
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - uses: googleapis/release-please-action@v5
         with:
-          token: ${{ secrets.GH_ADMIN_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
