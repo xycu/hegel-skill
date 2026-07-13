@@ -257,16 +257,22 @@ type is derived from the Conventional Commit type of each squash subject (`fix:`
   always match. release-please updates all three via `extra-files` (a single `$..version`
   jsonpath covers both marketplace fields); `tools/version_check.py` is the independent
   drift guard wired into the `skill-ci` lint job — it fails CI if they diverge.
-- **Signing & checks.** The automation authenticates with the `GH_ADMIN_TOKEN` PAT (#66);
-  its commits/merge/tag are API-created, so GitHub web-flow-signs them as "Verified" —
-  regardless of the token — and the #12 ruleset is satisfied with no GitHub App. Because the
-  release PR is authored by a PAT rather than the default `GITHUB_TOKEN` (whose events GitHub
-  forbids from triggering further workflow runs), its checks (`skill-ci`/drift, OpenSpec,
-  signed-commits) **run normally** instead of parking as `action_required`. `main`'s branch
-  protection still requires **no status checks** — the release PR is gated by required review
-  plus the signing ruleset — but the checks now actually execute on it, catching e.g. version
-  drift on the one PR that edits `.claude-plugin/**`. The PAT needs `contents:write` +
-  `pull_requests:write`; a `403` in `release.yml` means it lacks that scope.
+- **Signing & checks.** The automation authenticates with a **GitHub App** installation
+  token, minted per-run by `actions/create-github-app-token` from `RELEASE_APP_ID` /
+  `RELEASE_APP_PRIVATE_KEY`. Its commits/merge/tag are API-created, and GitHub web-flow-signs
+  them as "Verified" — this holds for the Actions `GITHUB_TOKEN` **or a GitHub App token**, but
+  **not** for a classic PAT, whose API commits are attributed to the user and land **unsigned**
+  (the earlier `GH_ADMIN_TOKEN` PAT approach, #66, failed the #12 signing ruleset for exactly
+  this reason). Because the release PR is authored by the App rather than the default
+  `GITHUB_TOKEN` (whose events GitHub forbids from triggering further workflow runs), its checks
+  (`skill-ci`/drift, OpenSpec, signed-commits) **run normally** instead of parking as
+  `action_required`. `main`'s branch protection still requires **no status checks** — the
+  release PR is gated by required review plus the signing ruleset — but the checks now actually
+  execute on it, catching e.g. version drift on the one PR that edits `.claude-plugin/**`. The
+  App needs **Contents** + **Pull requests** read/write and must be installed on the repo; a
+  `403` in `release.yml` means it lacks that or is not installed. (`GH_ADMIN_TOKEN` is retained
+  separately as the Terraform github-provider token in `infra-plan.yml`, which needs repo
+  **Administration** — a scope the release App does not carry.)
 - **Baseline.** The pipeline's first release reconciled the stale `0.1.0` to a stable
   `1.0.0` (via a one-time `release-as` bootstrap, since removed); every release after it
   derives its version from the Conventional Commit history, as above.
