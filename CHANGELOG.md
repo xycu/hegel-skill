@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.2](https://github.com/xycu/hegel-skill/compare/v1.11.1...v1.11.2) (2026-07-13)
+
+
+### Bug Fixes
+
+* **tools:** lint rejects the nested dismiss command form that cannot load ([#167](https://github.com/xycu/hegel-skill/issues/167)) ([c523dc4](https://github.com/xycu/hegel-skill/commit/c523dc4cb856eb51ca1ddedaf2b5abc8c9833008))
+
 ## [1.11.1](https://github.com/xycu/hegel-skill/compare/v1.11.0...v1.11.1) (2026-07-12)
 
 
