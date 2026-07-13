@@ -13,7 +13,10 @@
 
 - [x] 3.1 App-authored release commit verified: `v1.11.1` (sha 037e6c7) shows `verified: true`, `reason: valid`, committer `GitHub`
 - [x] 3.2 Removed the temporary admin bypass from the `require-signed-commits` ruleset (`17943629`); confirmed `bypass_actors: []`, `current_user_can_bypass: never`
-- [ ] 3.3 Confirm the NEXT release (a `fix:`/`feat:` after the bypass removal) still passes the "Verify every commit is signed" check with no bypass
+- [x] 3.3 Confirmed on v1.11.2 (the first `fix:` release after the bypass removal, PR #167 →
+      release PR #168): "Verify every commit is signed" passed on the release PR, the
+      release commit and tag commit (sha 9187bf7) show `verified: true, reason: valid`,
+      and the ruleset still reports `bypass_actors: []`, `current_user_can_bypass: never`
 
 ## 4. Verification
 
