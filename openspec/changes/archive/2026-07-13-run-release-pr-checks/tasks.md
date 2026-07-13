@@ -19,14 +19,17 @@
 
 ## 3. Verification on the live release PR (post-merge)
 
-- [ ] 3.1 Merge this change to `main`; confirm the push triggers `release.yml` and it
-      completes without a `403`/permission error from `GH_ADMIN_TOKEN` (if it 403s, the PAT
-      lacks `contents: write` / `pull_requests: write` scope — record it and revert 1.1).
-- [ ] 3.2 On the refreshed release PR, confirm its check workflows (`Skill CI`, `OpenSpec`,
-      `Conventional Commits`, `Signed commits`) **execute** rather than showing
-      `action_required`.
-- [ ] 3.3 On the release-please commit in that PR, confirm GitHub shows the **"Verified"**
-      badge (signed-commits ruleset #12 still satisfied). If not verified, revert 1.1 —
-      the PAT path is abandoned in favour of a GitHub App.
-- [ ] 3.4 Confirm the release PR is still `MERGEABLE` and that merging it produces the
-      version bump, tag, and GitHub Release as before (no regression to the release itself).
+- [x] 3.1 Merged in PR #148; the push triggered `release.yml` with no `403` from
+      `GH_ADMIN_TOKEN`.
+- [x] 3.2 Verified on the live release PR under the **successor identity**: release PR
+      #164 (v1.11.1) shows all check workflows executed with terminal statuses (`Skill CI`
+      smoke jobs, `OpenSpec`, `Conventional Commits`, `Signed commits` — all SUCCESS or
+      SKIPPED, none `action_required`).
+- [x] 3.3 Resolution per the fallback in this task: the PAT's API commits landed
+      **unsigned** (attributed to the user, not web-flow-signed), so 1.1 was reverted and
+      the PAT path abandoned in favour of a GitHub App installation token (PR #162, change
+      `harden-release-signing-identity`). The requirement this change adds — release PR
+      checks execute alongside verified commits — is satisfied by the App identity:
+      release PR #164's commit is Verified and its checks ran.
+- [x] 3.4 Release PR #164 merged cleanly and produced the v1.11.1 bump, tag, and GitHub
+      Release with no regression.
