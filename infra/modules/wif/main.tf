@@ -35,11 +35,12 @@ resource "google_service_account_iam_member" "wif_impersonation" {
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_owner}/${var.github_repository}"
 }
 
-# Least-privilege: the only thing GitHub Actions does in GCP is read/write the
-# OpenTofu remote state, so the runner gets object read/write on the state bucket
-# plus (below) read-only visibility into enabled project services — no write/create
-# grants on any project resource, no Cloud Run / Artifact Registry / Secret Manager —
-# those were dropped with the GPU eval runner.
+# Least-privilege: in GCP GitHub Actions reads/writes the OpenTofu remote state and
+# runs the eval workload, so the runner gets object read/write on the state bucket
+# plus (below) read-only visibility into enabled project services and the two
+# eval-runner grants (Artifact Registry push/pull + Cloud Run Job execution). No
+# write/create grants on any other project resource, no Secret Manager, and no
+# service-account impersonation beyond the WIF principal impersonating this runner SA.
 resource "google_storage_bucket_iam_member" "runner_state" {
   bucket = var.tfstate_bucket
   role   = "roles/storage.objectAdmin"
@@ -100,5 +101,28 @@ resource "google_project_iam_member" "runner_workload_identity_pool_viewer" {
 resource "google_project_iam_member" "runner_security_reviewer" {
   project = var.project_id
   role    = "roles/iam.securityReviewer"
+  member  = "serviceAccount:${google_service_account.runner.email}"
+}
+
+# Eval-runner grant #1 (#79 Phase 0): push/pull the eval image. Scoped to the single
+# eval repository (not project-wide artifactregistry.writer) — `roles/artifactregistry.writer`
+# covers both push and pull, so CI can publish the image and the Cloud Run Job can read it.
+resource "google_artifact_registry_repository_iam_member" "runner_eval_writer" {
+  project    = var.project_id
+  location   = var.region
+  repository = var.eval_repository_id
+  role       = "roles/artifactregistry.writer"
+  member     = "serviceAccount:${google_service_account.runner.email}"
+}
+
+# Eval-runner grant #2 (#79 Phase 0): execute the eval Cloud Run Job. `roles/run.invoker`
+# grants `run.jobs.run` (invoke/execute an existing job) — it does NOT let the runner create,
+# deploy, or reconfigure Cloud Run resources, and it is deliberately not paired with
+# `roles/iam.serviceAccountUser`, so the runner cannot act-as/impersonate a job runtime SA
+# (keeps the no-impersonation guardrail). Granted at project scope because the Job resource
+# does not exist yet — its shape is fixed by the Phase 3 discovery run.
+resource "google_project_iam_member" "runner_run_invoker" {
+  project = var.project_id
+  role    = "roles/run.invoker"
   member  = "serviceAccount:${google_service_account.runner.email}"
 }

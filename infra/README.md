@@ -4,10 +4,13 @@ OpenTofu defines this repo's **GitHub configuration** and the keyless auth GitHu
 uses to reach GCP. Terraform-compatible — `tofu` and `terraform` both work; OpenTofu is the
 supported tool.
 
-There is **no GPU / Cloud Run / Artifact Registry footprint**. The SLM evals run on
-GitHub-hosted runners (a fast subset per PR, the full suite nightly — see
-`.github/workflows/`). The only GCP resources here are a Workload Identity pool for keyless
-auth and the IAM that lets GitHub Actions read/write the OpenTofu remote state.
+The GCP footprint is a Workload Identity pool for keyless auth, the IAM that lets GitHub
+Actions read/write the OpenTofu remote state, and — for the eval-runner migration (#79) — an
+**Artifact Registry** Docker repository for the eval image plus **Cloud Run Job execution**
+grants. **No GPU** is enabled: the CPU-vs-GPU decision is deferred to the Phase 3 discovery
+run. The SLM evals currently still run on GitHub-hosted runners (a fast subset per PR, the
+full suite nightly — see `.github/workflows/`); they migrate onto the Cloud Run Job one step
+at a time.
 
 ## Layout
 
@@ -19,7 +22,7 @@ infra/
   main.tf                APIs + module wiring
   outputs.tf             WIF provider, runner SA
   modules/
-    wif/                 Workload Identity Federation (keyless GHA -> GCP, state access only)
+    wif/                 Workload Identity Federation (keyless GHA -> GCP: state access + eval-runner grants)
     github-repo/         rulesets, evals environment, labels, CI variables
 ```
 
@@ -34,8 +37,9 @@ These exist before OpenTofu runs, so create them by hand once:
 4. A **fine-grained PAT** (repo admin) for the github provider, exported as
    `GITHUB_TOKEN` locally / `GH_ADMIN_TOKEN` secret in CI.
 
-No GPU, no L4 quota, no region capability check — the only GCP service the workload needs
-is Cloud Storage (for state) plus the IAM/STS APIs for federation.
+No GPU, no L4 quota, no region capability check at this stage — the APIs OpenTofu enables
+are Cloud Storage (state), IAM/STS (federation), and Artifact Registry + Cloud Run (eval
+runner). The versioned state bucket is the only pre-created dependency.
 
 ## Usage
 
@@ -48,8 +52,9 @@ tofu apply
 
 The apply publishes every value CI needs as **repo variables** (`GCP_PROJECT_ID`,
 `GCP_REGION`, `GCP_TFSTATE_BUCKET`, `GCP_WORKLOAD_IDENTITY_PROVIDER`,
-`GCP_SERVICE_ACCOUNT`) — so don't set those by hand, or the apply will clash with an
-existing variable. The first apply is therefore **local**; plan-on-PR works afterwards.
+`GCP_SERVICE_ACCOUNT`, `GCP_ARTIFACT_REGISTRY`) — so don't set those by hand, or the apply
+will clash with an existing variable. The first apply is therefore **local**; plan-on-PR
+works afterwards.
 
 ## Importing existing GitHub config
 

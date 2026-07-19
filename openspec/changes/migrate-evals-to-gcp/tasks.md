@@ -1,9 +1,9 @@
 ## 0. Prereqs (no GPU)
 
-- [ ] 0.1 Confirm/target GCP project and enable required APIs (Artifact Registry, Cloud Run, IAM).
-- [ ] 0.2 Create the eval Artifact Registry repository.
-- [ ] 0.3 Confirm the versioned GCS state bucket exists (from `ci-infrastructure`); reuse it.
-- [ ] 0.4 Extend the WIF principal's IAM: Artifact Registry push + Cloud Run Job execution (`roles/run.invoker` + job-execution), keeping the no-Secret-Manager / no-impersonation guardrails.
+- [x] 0.1 Confirm/target GCP project and enable required APIs (Artifact Registry, Cloud Run, IAM).
+- [x] 0.2 Create the eval Artifact Registry repository.
+- [x] 0.3 Confirm the versioned GCS state bucket exists (from `ci-infrastructure`); reuse it.
+- [x] 0.4 Extend the WIF principal's IAM: Artifact Registry push + Cloud Run Job execution (`roles/run.invoker` + job-execution), keeping the no-Secret-Manager / no-impersonation guardrails.
 
 ## 1. Container image
 

@@ -33,3 +33,8 @@ variable "tfstate_bucket" {
   description = "GCS state bucket name (exposed to CI as a repo variable)."
   type        = string
 }
+
+variable "eval_artifact_registry" {
+  description = "Docker Artifact Registry path for the eval image (exposed to CI as a repo variable)."
+  type        = string
+}

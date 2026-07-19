@@ -29,3 +29,9 @@ variable "eval_reviewers" {
   type        = list(string)
   default     = []
 }
+
+variable "eval_repository_id" {
+  description = "Artifact Registry repository id for the eval runtime image."
+  type        = string
+  default     = "hegel-evals"
+}
