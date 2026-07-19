@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.12.0](https://github.com/xycu/hegel-skill/compare/v1.11.2...v1.12.0) (2026-07-19)
+
+
+### Features
+
+* **evals:** eval-runner container image (Phase 1) ([#180](https://github.com/xycu/hegel-skill/issues/180)) ([03669dd](https://github.com/xycu/hegel-skill/commit/03669dd1eef48f2edd95fd9b42dcdc41639bf68f))
+* **infra:** GCP eval-runner prereqs — Artifact Registry + WIF grants ([#176](https://github.com/xycu/hegel-skill/issues/176)) ([#179](https://github.com/xycu/hegel-skill/issues/179)) ([bbd3bb5](https://github.com/xycu/hegel-skill/commit/bbd3bb589eccd2a1f2eb2a8f08ebbe403de8734c))
+* **infra:** GCP eval-runner prereqs (Artifact Registry, WIF grants) ([#176](https://github.com/xycu/hegel-skill/issues/176)) ([bbd3bb5](https://github.com/xycu/hegel-skill/commit/bbd3bb589eccd2a1f2eb2a8f08ebbe403de8734c))
+
 ## [1.11.2](https://github.com/xycu/hegel-skill/compare/v1.11.1...v1.11.2) (2026-07-13)
 
 
