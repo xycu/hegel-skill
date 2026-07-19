@@ -202,6 +202,8 @@
       "Bash(poetry run ./tools/*)",
       "Bash(poetry run ./tools/**/*)",
 
+      "Bash(docker *)",
+
       "Bash(./ci/*)",
       "Bash(./ci/**/*)",
       "Bash(bash ./ci/*)",

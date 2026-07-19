@@ -1,0 +1,41 @@
+# Build context for eval-runner/Dockerfile is the repository root, but the image
+# only needs run-tests.sh, tools/, promptfoo/, skills/, and .claude-plugin/.
+# Everything else is excluded to keep the context small and the cache stable.
+
+# VCS / CI / editor / env
+.git
+.github
+.gitignore
+.idea
+.claude
+.venv
+venv
+**/__pycache__
+**/*.py[cod]
+.DS_Store
+**/.DS_Store
+
+# Node (only present if installed locally; promptfoo is installed in-image)
+node_modules
+**/node_modules
+
+# Repo areas the eval image does not use
+infra
+openspec
+install
+assets
+commands
+eval-runner
+
+# Release / docs / packaged artifacts
+README.md
+AGENTS.md
+GEMINI.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+gemini-extension.json
+release-please-config.json
+.release-please-manifest.json
+.claude-plugin/*.plugin
+promptfoo-report-*.html

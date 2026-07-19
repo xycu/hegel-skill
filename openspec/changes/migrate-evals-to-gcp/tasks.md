@@ -7,9 +7,9 @@
 
 ## 1. Container image
 
-- [ ] 1.1 Write a `Dockerfile` for the eval runtime: Ollama + promptfoo pinned to `PROMPTFOO_VERSION`, `run-tests.sh`, `promptfoo/` configs.
-- [ ] 1.2 Bake the model(s) under test into the image so no model is pulled at run time.
-- [ ] 1.3 Verify the image builds from a clean checkout and the installed promptfoo equals `PROMPTFOO_VERSION`.
+- [x] 1.1 Write a `Dockerfile` for the eval runtime: Ollama + promptfoo pinned to `PROMPTFOO_VERSION`, `run-tests.sh`, `promptfoo/` configs.
+- [x] 1.2 Bake the model(s) under test into the image so no model is pulled at run time.
+- [x] 1.3 Verify the image builds from a clean checkout and the installed promptfoo equals `PROMPTFOO_VERSION`.
 
 ## 2. Local containerised runner
 
