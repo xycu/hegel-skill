@@ -328,15 +328,20 @@ This repo's **GitHub configuration** and the keyless auth GitHub Actions uses to
 are defined as **OpenTofu** under `infra/` (Terraform-compatible; OpenTofu is the supported
 tool). See [`infra/README.md`](infra/README.md) for layout, one-time bootstrap, and commands.
 
-- **No GPU / Cloud Run / Artifact Registry footprint.** Evals run on GitHub-hosted runners
-  (fast subset per PR, full suite nightly — see *Way of working*). The only GCP resources
-  are the WIF pool and the IAM that lets CI read/write the remote state.
+- **Eval-runner prereqs, no GPU (#79 Phase 0).** The GCP footprint is the WIF pool, the IAM
+  that lets CI read/write the remote state, plus an **Artifact Registry** repo for the eval
+  image and **Cloud Run Job execution** grants. No GPU is enabled — the CPU-vs-GPU call is
+  deferred to the Phase 3 discovery run. Evals still run on GitHub-hosted runners (fast
+  subset per PR, full suite nightly — see *Way of working*) and migrate onto the Cloud Run
+  Job one step at a time.
 - **No Terragrunt** — single project/env, it would be pure overhead.
 - **State** lives in a versioned GCS bucket (`tofu init -backend-config=backend.hcl`);
   never local. No secrets in plaintext state.
 - **GHA → GCP auth is keyless via Workload Identity Federation** (`modules/wif`); there are
   **no long-lived service-account keys**, and the runner SA is least-privilege — object
-  read/write on the **state bucket only**.
+  read/write on the **state bucket**, plus the read-only viewer roles a plan needs and the
+  two eval-runner grants (Artifact Registry push/pull on the eval repo + `roles/run.invoker`
+  to execute the Cloud Run Job). No Secret Manager, no service-account impersonation.
 - **The GitHub config is code** (`modules/github-repo`): the signed-commits ruleset, the
   `evals` environment + reviewers + prevent-self-review, labels, and CI variables — so it is
   backed up and drift-detectable. Existing resources must be `tofu import`ed before the first

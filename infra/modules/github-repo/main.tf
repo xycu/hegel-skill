@@ -114,3 +114,9 @@ resource "github_actions_variable" "tfstate_bucket" {
   variable_name = "GCP_TFSTATE_BUCKET"
   value         = var.tfstate_bucket
 }
+
+resource "github_actions_variable" "eval_artifact_registry" {
+  repository    = var.repository
+  variable_name = "GCP_ARTIFACT_REGISTRY"
+  value         = var.eval_artifact_registry
+}

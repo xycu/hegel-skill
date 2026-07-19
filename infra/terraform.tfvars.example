@@ -7,3 +7,6 @@ github_repository = "hegel-skill"
 
 # GitHub usernames allowed to approve the `evals` deployment gate.
 eval_reviewers = ["xycu"]
+
+# Artifact Registry repository id for the eval runtime image (optional; defaults to hegel-evals).
+# eval_repository_id = "hegel-evals"
