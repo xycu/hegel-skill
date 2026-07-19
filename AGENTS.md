@@ -4,12 +4,15 @@ This file provides guidance to coding agents (Claude Code and others that read A
 
 ## What this is
 
-A Claude **plugin** with no code and no build system. It ships a single persona
-**skill** — Doktor Anselm Brandt, a ruined Hegelian philosopher — entirely as Markdown
-prose. There is no build system; "correctness" here means the prose keeps the persona
-coherent and the Hegel citations accurate. Validate changes mostly by reading them — but
-two automated guards exist (see "Tests" below), and behavioural changes go through
-OpenSpec (see "Spec-driven development").
+A Claude **plugin** built around a single persona **skill** — Doktor Anselm Brandt, a
+ruined Hegelian philosopher — written entirely as Markdown prose. Alongside the skill it
+ships two plugin slash commands (`/brandt`, `/brandt-dismiss`) and **generated** install
+artifacts that carry the same persona to other tools (Gemini CLI, Cursor, Codex, … —
+see "Cross-tool install artifacts"). There is no build system for the persona itself;
+"correctness" here means the prose keeps the persona coherent and the Hegel citations
+accurate. Validate changes mostly by reading them — but automated guards exist (see
+"Tests" below), and behavioural changes go through OpenSpec (see "Spec-driven
+development").
 
 ## Way of working
 
@@ -57,15 +60,24 @@ shorter human-facing entry point that summarizes the essentials and links back h
   **squash-merge**; head branches auto-delete on merge. All commits must be
   **signed and verified** — see "Signed commits" below. These rules are enforced
   (Conventional Commits #11, branch protection #13, signed commits #12).
-- **Don't blind-arm auto-merge.** `main` currently requires **no status checks**
-  (the release-PR caveat below), so `gh pr merge --auto` merges the instant the PR is
-  merge-clean — *before* the eval run finishes. This shipped #71 unreviewed-by-CI and
-  caused a downstream conflict. Until #73 makes the checks required-safe, **watch the
-  Skill-CI run go green, then merge by hand**; only auto-arm a PR whose checks are
-  already required and green.
+- **Auto-merge is safe to arm — required checks gate `main`.** The
+  `require-status-checks-main` ruleset (IaC-managed, `infra/modules/github-repo`)
+  requires `Deterministic skill lint`, `Core SLM smoke (en)`, and
+  `Core SLM smoke (pl)` on every PR into `main` (#73), so `gh pr merge --auto` now
+  waits for the eval run instead of merging the instant the PR is merge-clean (the
+  failure mode that once shipped #71 unreviewed-by-CI). Canary matrix legs and the
+  results-comment job are deliberately **not** required. Because a required check
+  derived from a workflow-level `paths:` filter would never post — and so never
+  resolve — on a PR that doesn't touch those paths, `skill-ci.yml` has **no**
+  `paths:` filter; instead an ungated `paths-filter` job decides per-PR whether the
+  gate/lint/smoke jobs do real work. An unrelated or release-please PR ends up with
+  terminal `skipped`/trivially-green statuses under the required contexts, so it
+  neither wedges on the ruleset nor prompts for eval approval.
 - **Skill CI runs in reviewed-PR mode.** Every eval job `needs:` a `gate` job bound to
   the **`evals` environment**, so a run sits *"Waiting for review"* and **no runner
-  starts until approved** (one approval releases the whole run). Self-approve is allowed —
+  starts until approved** (one approval releases the whole run). Only a PR the
+  `paths-filter` job deems relevant (skill/eval/tooling paths — see the previous
+  bullet) schedules `gate` at all, so unrelated PRs never prompt. Self-approve is allowed —
   but **via the deployment gate, not a PR review**: PR → Checks → *Review deployments* →
   tick `evals` → *Approve and deploy*. (The PR *Files changed → Approve* button is a
   different thing GitHub never lets an author press — and it isn't needed: `main` requires
@@ -112,6 +124,12 @@ squash-merge commits with its own key (still "Verified").
 ## Layout that matters
 
 - `.claude-plugin/plugin.json` — plugin manifest (name, version, description, keywords).
+- `commands/brandt.md` / `commands/brandt-dismiss.md` — the plugin slash commands:
+  `/brandt` is the deterministic **manual summon** (rung 1 of the activation ladder —
+  sticky, full voice, `slop:` footer), `/brandt-dismiss` the sincere release. Both
+  delegate to the skill and deliberately restate none of its rules — keep it that way.
+  Command names must stay **flat**: the nested `brandt:dismiss` file form never loads
+  (#163), and `skill_lint.py` rejects it (#167).
 - `skills/soused-hegelian/SKILL.md` — the persona itself. Its YAML frontmatter
   `description` is the **trigger contract**: it tells the client when to load the skill
   (asks for the "drunk Hegelian," "Doktor Brandt," a dialectical answer, etc.). Editing
@@ -127,6 +145,27 @@ when Brandt reaches for a specific work, term, or quotation. This split is inten
 keep `SKILL.md` lean (behaviour and rules), and push the lookup-heavy material (what to
 cite, exact lines) into the reference sheet. When adding new Hegel content, put it in the
 reference sheet; when changing *how Brandt behaves*, edit `SKILL.md`.
+
+## Cross-tool install artifacts (generated — never hand-edit)
+
+The persona also ships for tools other than Claude Code, per the
+`cross-tool-install` spec (#40–#43):
+
+- `GEMINI.md` + `gemini-extension.json` — a **Gemini CLI extension**
+  (`gemini extensions install <repo-url>`).
+- `install/<tool>/` — rules files for Cursor, Windsurf, Cline, Zed, Aider,
+  GitHub Copilot, Codex, and OpenCode; the README carries the copy-destination
+  matrix.
+
+Every one of these files is **derived and committed**: generated from the canonical
+sources (`SKILL.md` + `references/hegel-reference.md`) by
+`tools/build_install_artifacts.py` (stdlib-only, no model). Only the Claude-specific
+activation ladder is swapped for an "always on" adapter; the engine, voice,
+citations, slop pass, and boundary cases transclude verbatim. Never edit a generated
+file — edit the canonical source and run `python3 tools/build_install_artifacts.py`
+to regenerate. CI's lint job runs it with `--check` and **fails on any drift** in
+presence or content, so a `SKILL.md` or reference edit that skips regeneration will
+not pass CI.
 
 ## Invariants to preserve when editing
 
@@ -193,9 +232,12 @@ When both gates pass, append the aside as a **final paragraph**, blank-line-sepa
 
 ## Tests
 
-Two automated layers guard against regressions: `tools/skill_lint.py` (deterministic
-package/frontmatter lint, no model) and the [promptfoo](https://www.promptfoo.dev/) SLM
-smoke evals (`promptfoo/`, EN + PL over Ollama on `gemma4:e4b-it-qat`). They run in **two
+Two automated layers guard against regressions: a deterministic no-model lint tier —
+`tools/skill_lint.py` (package/frontmatter/commands lint), `tools/version_check.py`
+(version-field lockstep), and `tools/build_install_artifacts.py --check` (generated
+install artifacts current), all run by the `skill-ci` lint job — and the
+[promptfoo](https://www.promptfoo.dev/) SLM smoke evals (`promptfoo/`, EN + PL over
+Ollama on `gemma4:e4b-it-qat`). They run in **two
 tiers** (see *Way of working*): the per-PR gate (`skill-ci.yml`) runs the **fast** subset —
 the three core behaviours via the `*.core.*` configs, deterministic asserts only, no judge;
 the **nightly** suite (`skill-ci-nightly.yml`) runs the **full** model-graded suite via the
@@ -252,9 +294,10 @@ changelog — through the reviewed flow, never bypassing protected `main` (#13).
 type is derived from the Conventional Commit type of each squash subject (`fix:` → patch,
 `feat:` → minor, `!`/`BREAKING CHANGE:` → major).
 
-- **Three version fields, one value.** `version` (`.claude-plugin/plugin.json`) and both
-  `metadata.version` and `plugins[0].version` (`.claude-plugin/marketplace.json`) must
-  always match. release-please updates all three via `extra-files` (a single `$..version`
+- **Four version fields, one value.** `version` (`.claude-plugin/plugin.json`), both
+  `metadata.version` and `plugins[0].version` (`.claude-plugin/marketplace.json`), and
+  `version` (`gemini-extension.json`, a generated cross-tool artifact) must always
+  match. release-please updates all four via `extra-files` (a single `$..version`
   jsonpath covers both marketplace fields); `tools/version_check.py` is the independent
   drift guard wired into the `skill-ci` lint job — it fails CI if they diverge.
 - **Signing & checks.** The automation authenticates with a **GitHub App** installation
@@ -265,10 +308,12 @@ type is derived from the Conventional Commit type of each squash subject (`fix:`
   (the earlier `GH_ADMIN_TOKEN` PAT approach, #66, failed the #12 signing ruleset for exactly
   this reason). Because the release PR is authored by the App rather than the default
   `GITHUB_TOKEN` (whose events GitHub forbids from triggering further workflow runs), its checks
-  (`skill-ci`/drift, OpenSpec, signed-commits) **run normally** instead of parking as
-  `action_required`. `main`'s branch protection still requires **no status checks** — the
-  release PR is gated by required review plus the signing ruleset — but the checks now actually
-  execute on it, catching e.g. version drift on the one PR that edits `.claude-plugin/**`. The
+  (OpenSpec, signed-commits, Skill CI's status contexts) **run normally** instead of parking as
+  `action_required`. The required status checks on `main` (see *Way of working*) are satisfied
+  on the release PR without an eval run: `skill-ci.yml` deliberately skips its gate/lint/smoke
+  work on `release-please--` branches (#61) while still posting terminal statuses under the
+  required contexts, so the version-only PR neither prompts for eval approval nor wedges on
+  the ruleset. The
   App needs **Contents** + **Pull requests** read/write and must be installed on the repo; a
   `403` in `release.yml` means it lacks that or is not installed. (`GH_ADMIN_TOKEN` is retained
   separately as the Terraform github-provider token in `infra-plan.yml`, which needs repo
@@ -301,18 +346,21 @@ tool). See [`infra/README.md`](infra/README.md) for layout, one-time bootstrap, 
 
 ## Spec-driven development (OpenSpec)
 
-The invariants above are also encoded as machine-checkable requirements in
-`openspec/specs/soused-hegelian-persona/spec.md` (OpenSpec, `@fission-ai/openspec`).
-That file is the **source of truth for behaviour**; this section of `AGENTS.md` is
-its human-readable mirror — when you change one, change the other so they do not
-drift. CI (`.github/workflows/openspec.yml`) runs
+Behaviour and process are encoded as machine-checkable requirements under
+`openspec/specs/` (OpenSpec, `@fission-ai/openspec`) — currently seven capabilities:
+`soused-hegelian-persona` (the persona itself), `persona-commands`,
+`cross-tool-install`, `skill-evaluation`, `local-test-runner`, `ci-infrastructure`,
+and `release-pipeline`. Those files are the **source of truth**; the persona spec's
+human-readable mirror is the "Invariants" section above — when you change one,
+change the other so they do not drift. CI (`.github/workflows/openspec.yml`) runs
 `openspec validate --all --strict` on every PR and push to `main`; a malformed or
 scenario-less requirement fails the build.
 
-The workflow for a **behavioural change to the persona**:
+The workflow for a **spec-relevant change** (persona behaviour, tooling, CI —
+see *Way of working*):
 
 1. Open a change under `openspec/changes/<change-name>/` — `proposal.md` plus a
-   delta `specs/soused-hegelian-persona/spec.md` (delta headers: `## ADDED
+   delta `specs/<capability>/spec.md` (delta headers: `## ADDED
    Requirements`, `## MODIFIED Requirements`, `## REMOVED Requirements`).
 2. `openspec validate <change-name> --strict` until clean.
 3. Edit the actual skill prose (`SKILL.md` / references) to match.
