@@ -13,9 +13,9 @@
 
 ## 2. Local containerised runner
 
-- [ ] 2.1 Add a single script/make target that runs the promptfoo suite inside the container from repo root.
-- [ ] 2.2 Ensure exit code mirrors CI semantics (0 on pass, non-zero on any failure).
-- [ ] 2.3 Run it locally against the core subset and confirm pass and forced-fail both propagate correctly.
+- [x] 2.1 Add a single script/make target that runs the promptfoo suite inside the container from repo root.
+- [x] 2.2 Ensure exit code mirrors CI semantics (0 on pass, non-zero on any failure).
+- [x] 2.3 Run it locally against the core subset and confirm pass and forced-fail both propagate correctly.
 
 ## 3. One manual test on GCP (discovery)
 

@@ -32,28 +32,62 @@ docker build -f eval-runner/Dockerfile \
   -t hegel-evals .
 ```
 
-## Run
+## Run — local containerised runner
 
-The entrypoint is `run-tests.sh`; it manages the Ollama lifecycle and mirrors CI
-exit codes (`0` = all stages passed, non-zero = any failed). Args pass straight
-through.
+`eval-runner/run-local.sh` is the one command to run the suite **inside** the
+container from the repo root. It builds the image once if absent, reuses it
+otherwise, and `docker run`s it — propagating the container's exit code unchanged,
+so it mirrors CI (`0` = every eval stage passed, non-zero = any failed). This is
+the local de-risk step before any cloud spend: what passes here is what a Cloud
+Run Job will run.
 
 ```sh
-docker run --rm hegel-evals                              # full suite, default model
-docker run --rm -e EVAL_MODEL=llama3.2:3b hegel-evals    # pick a baked model
-docker run --rm hegel-evals -k persona-persistence       # filter cases (EN+PL)
+eval-runner/run-local.sh                     # full graded suite, default baked model
+eval-runner/run-local.sh --core              # fast PR-gate core subset (== skill-ci.yml)
+eval-runner/run-local.sh --core -k en-grief  # one behaviour, EN+PL
+eval-runner/run-local.sh --offline --core    # prove offline: no run-time pull
+eval-runner/run-local.sh --rebuild --core    # force an image rebuild first
+```
+
+Wrapper flags: `--core`, `--rebuild`, `--no-build`, `--offline` (adds
+`--network none`), `--image NAME`. Everything after them is forwarded verbatim to
+`run-tests.sh` in the container (`--core`, `-k PATTERN`, a positional `MODEL`).
+`--offline` with an **un-baked** model is how a missing model surfaces as a
+non-zero exit — the same signal CI would give.
+
+> **Memory:** the model runs on CPU and needs headroom — `gemma4:e4b-it-qat`
+> (multimodal, ~6 GB + KV cache at `num_ctx` 12288) is OOM-killed on Docker
+> Desktop's default 8 GB VM (empty output → every keyword gate fails). Give the
+> engine **≥ 12 GiB** (Docker Desktop → Settings → Resources → Memory). This is
+> also the memory floor to size the Phase 3 Cloud Run Job against.
+
+### Raw `docker run`
+
+The entrypoint is `run-tests.sh`; it manages the Ollama lifecycle. The image sets
+`RUN_LINT=0`, so it runs **evals only** — the container carries just the eval
+sources, not the whole package surface `skill_lint.py` checks; lint stays on the
+host / CI runner (#79). Args pass straight through.
+
+```sh
+docker run --rm hegel-evals                        # full graded suite, default model
+docker run --rm hegel-evals --core                 # fast core subset (judge off)
+docker run --rm hegel-evals mymodel:tag            # pick a baked model (positional)
+docker run --rm -e MODEL=mymodel:tag hegel-evals   # ...or via MODEL=
+docker run --rm hegel-evals -k persona-persistence # filter cases (EN+PL)
 ```
 
 ### Run-time knobs (`-e`)
 
-| Env           | Default             | Purpose                                                  |
-| ------------- | ------------------- | -------------------------------------------------------- |
-| `EVAL_MODEL`  | `gemma4:e4b-it-qat` | Model under test. Must have been **baked**, or it pulls. |
-| `GRADER_MODEL`| = `EVAL_MODEL`      | Judge model for the `llm-rubric` graded suite.           |
+| Env           | Default             | Purpose                                                             |
+| ------------- | ------------------- | ------------------------------------------------------------------- |
+| `MODEL`       | `gemma4:e4b-it-qat` | Model under test. Also settable as a positional arg. Must be **baked**. |
+| `GRADER_MODEL`| = `MODEL`           | Judge model for the `llm-rubric` graded suite (full config only).   |
+| `RUN_LINT`    | `0` (in image)      | `1` re-enables the lint stage; the image omits its inputs, so leave `0`. |
 
-> Selecting an `EVAL_MODEL`/`GRADER_MODEL` that was not baked reintroduces a
-> run-time pull (network). Keep to the baked set to preserve the offline
-> guarantee.
+> Select the model under test with `MODEL=` or the positional arg — `run-tests.sh`
+> derives `EVAL_MODEL` from it, so passing `-e EVAL_MODEL=` directly is overridden.
+> A `MODEL`/`GRADER_MODEL` that was not baked reintroduces a run-time pull
+> (network); keep to the baked set to preserve the offline guarantee.
 
 ## Layer-cache design
 
