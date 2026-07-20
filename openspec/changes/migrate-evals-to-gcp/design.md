@@ -79,3 +79,28 @@ touching un-migrated steps; fallback retired only after consecutive green GCP ru
   preferred.
 - **Region + machine size** for the Cloud Run Job — to be fixed by the Phase 3 discovery run.
 - **Does any behaviour actually need GPU within budget?** — answered by Phase 3 evidence.
+
+## Phase 3 discovery findings
+
+Manual single-behaviour run (2026-07-20): `--core -k en-grief` (judge off) as a Cloud Run
+**Job** in `europe-west4`, 4 vCPU / 16 GiB, image built and pushed to Artifact Registry by CI
+over WIF (`.github/workflows/eval-image.yml`, `workflow_dispatch` — GitHub runners are amd64,
+so the image is Cloud Run-compatible; a local build on Apple Silicon would be arm64).
+
+- **CPU is correct.** The case passed on pure CPU (`execute --wait` exit 0) — no GPU is needed
+  for *correctness*. Cloud Run pulled the 22 GB image with no extra IAM (the runtime SA needs
+  no registry grant).
+- **Runtime.** ~23 min end-to-end for one case (execution 14:52→15:15), including container
+  cold-start and a **one-time** model load into RAM. A batched run amortizes that load across
+  cases, so marginal per-case time is lower — not yet measured (single data point).
+- **Cost.** ≈ $0.19 for the run (4 vCPU + 16 GiB × ~1377 s). The 22 GB image makes cold-start
+  slow, but that time is largely unbilled. Artifact Registry storage ≈ $0.09/mo.
+- **Region.** `europe-west4` serves CPU Cloud Run Jobs. **L4-GPU availability in `europe-west4`
+  is not yet confirmed** (Cloud Run offers only the NVIDIA L4, and only in a subset of regions).
+
+**Implication for Phase 4.** At 4 vCPU, ~23 min/case is too slow for the latency-sensitive PR
+gate (the 6-case core subset extrapolates to ~1.5–2.5 hrs vs the "minutes" goal from #80).
+Cheaper levers to try before the L4 (with its quota/region caveats): more vCPU (8/16) and
+parallel EN/PL tasks (CI already splits them). Nightly, being latency-tolerant, may accept CPU
+if it fits the window. The CPU-vs-GPU choice is therefore **deferred to a Phase 4 experiment,
+not pre-committed** — consistent with the strangler-fig decision above.

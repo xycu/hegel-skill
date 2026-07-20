@@ -19,10 +19,10 @@
 
 ## 3. One manual test on GCP (discovery)
 
-- [ ] 3.1 Push the image to Artifact Registry via WIF (no SA JSON key).
-- [ ] 3.2 Configure a Cloud Run Job from the image; run a single behaviour (one language) via `gcloud run jobs execute --wait`.
-- [ ] 3.3 Confirm the job exit code reflects pass/fail.
-- [ ] 3.4 Record runtime, CPU-vs-GPU sufficiency, region availability, and cost — the discovery finding that decides whether GPU is needed.
+- [x] 3.1 Push the image to Artifact Registry via WIF (no SA JSON key). *(Built + pushed by CI on amd64 GitHub runners over WIF — `.github/workflows/eval-image.yml`, `workflow_dispatch`; runner SA already holds repo-scoped `artifactregistry.writer`.)*
+- [x] 3.2 Configure a Cloud Run Job from the image; run a single behaviour (one language) via `gcloud run jobs execute --wait`. *(Job `hegel-eval-discovery`, europe-west4, 4 vCPU / 16 GiB; `--args=--core,-k,en-grief`.)*
+- [x] 3.3 Confirm the job exit code reflects pass/fail. *(`execute --wait` returned 0; the EN grief case passed on CPU.)*
+- [x] 3.4 Record runtime, CPU-vs-GPU sufficiency, region availability, and cost — the discovery finding that decides whether GPU is needed. *(See design.md "Phase 3 discovery findings".)*
 
 ## 4. Shortest CI step on GCP
 
