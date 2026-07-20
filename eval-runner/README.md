@@ -32,6 +32,16 @@ docker build -f eval-runner/Dockerfile \
   -t hegel-evals .
 ```
 
+### Building for GCP (linux/amd64)
+
+Cloud Run runs **linux/amd64 only**. A local `docker build` on Apple Silicon
+produces an **arm64** image Cloud Run cannot run, so the image destined for
+Artifact Registry is built in CI on GitHub's amd64 runners and pushed over keyless
+WIF — see `.github/workflows/eval-image.yml` (manual `workflow_dispatch`). Trigger
+it with `gh workflow run "Eval image"`; it pushes `…/hegel-evals/runner:latest`
+plus a `:<sha>` tag. The local `run-local.sh` path below stays arm64 for laptop
+iteration — it never touches GCP.
+
 ## Run — local containerised runner
 
 `eval-runner/run-local.sh` is the one command to run the suite **inside** the

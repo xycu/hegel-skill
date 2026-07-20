@@ -1,0 +1,92 @@
+name: Eval image
+
+# Build the eval-runner container image and push it to Artifact Registry over
+# Workload Identity Federation (keyless — no SA JSON key). This is the load-bearing
+# build path the migration needs anyway (#79): later phases wire the PR gate /
+# nightly to pull this image and run it as a Cloud Run Job.
+#
+# Manual dispatch ONLY for now. It is deliberately NOT a required status check, so
+# it can never wedge `main` (cf. #73). It also builds for Cloud Run's required
+# linux/amd64: GitHub-hosted ubuntu runners are amd64-native, so no emulation — a
+# local `docker build` on Apple Silicon would produce an arm64 image Cloud Run
+# cannot run, which is exactly why this lives in CI.
+on:
+  workflow_dispatch:
+    inputs:
+      extra_tag:
+        description: "Extra image tag to push alongside :latest and :<sha> (optional)."
+        required: false
+        default: ""
+
+# Serialize pushes to the moving :latest tag; don't cancel an in-flight push.
+concurrency:
+  group: eval-image-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # mint the OIDC token for WIF
+
+jobs:
+  build-push:
+    name: Build & push eval image
+    runs-on: ubuntu-latest
+    # Skip (not fail) until Phase 0's WIF + registry repo variables are published.
+    if: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && vars.GCP_ARTIFACT_REGISTRY != '' }}
+    # Model bake (apt + node + npm + ~6 GB model pull) + push. Generous headroom.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      # The image is ~22 GB uncompressed (a multi-GB model is baked in), but a stock
+      # ubuntu-latest runner has only ~20 GB free on /. Drop preinstalled toolchains
+      # we never use to make room before the build, else `docker build` runs the
+      # runner out of disk mid-bake.
+      - name: Free disk space
+        run: |
+          set -x
+          before=$(df -B1 --output=avail / | tail -1)
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /usr/local/share/boost \
+            "${AGENT_TOOLSDIRECTORY:-/opt/hostedtoolcache}" || true
+          sudo docker image prune --all --force || true
+          after=$(df -B1 --output=avail / | tail -1)
+          printf 'Freed ~%d GiB\n' "$(((after - before) / 1073741824))"
+          df -h /
+
+      - name: Authenticate to GCP (WIF, keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Register gcloud as Docker's credential helper for the registry host, so
+      # `docker push` authenticates with the WIF-federated credentials from the auth
+      # step (the runner SA holds artifactregistry.writer scoped to this repo, #79
+      # Phase 0). No SA JSON key involved.
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
+
+      - name: Build and push
+        env:
+          # vars.GCP_ARTIFACT_REGISTRY is the repo path
+          # (LOCATION-docker.pkg.dev/PROJECT/hegel-evals); the image is `runner`.
+          IMAGE: ${{ vars.GCP_ARTIFACT_REGISTRY }}/runner
+          EXTRA_TAG: ${{ github.event.inputs.extra_tag }}
+        run: |
+          set -euo pipefail
+          tags="-t ${IMAGE}:latest -t ${IMAGE}:${GITHUB_SHA}"
+          if [ -n "${EXTRA_TAG}" ]; then
+            tags="${tags} -t ${IMAGE}:${EXTRA_TAG}"
+          fi
+          echo "Building ${IMAGE} (amd64) with tags: latest, ${GITHUB_SHA}${EXTRA_TAG:+, ${EXTRA_TAG}}"
+          docker build -f eval-runner/Dockerfile ${tags} .
+          docker push --all-tags "${IMAGE}"
+          echo "Pushed: ${IMAGE}:latest and ${IMAGE}:${GITHUB_SHA}"
