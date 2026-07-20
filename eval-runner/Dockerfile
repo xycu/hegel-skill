@@ -97,10 +97,16 @@ COPY --chown=evaluser:evaluser .claude-plugin/ ./.claude-plugin/
 # `python3`; PROMPTFOO_VERSION is re-exported so the pinned in-image promptfoo is
 # never shadowed by an npx fetch. EVAL_MODEL / GRADER_MODEL select which baked
 # model to run against at run time (no pull, provided it was baked).
+# RUN_LINT=0: this image carries only the eval sources, not the whole package
+# surface skill_lint.py validates (install artifacts, command files), so it runs
+# evals only — lint stays on the host / CI runner (#79: lint doesn't touch the
+# container). Copying those artifacts in just to lint would bloat the image with
+# generated files that can drift independently of the evals.
 ENV PYTHON=python3 \
     PROMPTFOO_VERSION=${PROMPTFOO_VERSION} \
     OLLAMA_HOST=http://127.0.0.1:11434 \
-    EVAL_MODEL=gemma4:e4b-it-qat
+    EVAL_MODEL=gemma4:e4b-it-qat \
+    RUN_LINT=0
 
 USER evaluser
 

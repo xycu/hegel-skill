@@ -5,6 +5,12 @@
 # The evals run via promptfoo (configs under promptfoo/).
 # All stages run even if an earlier one fails; the script exits non-zero if any did.
 #
+# RUN_LINT=0 (or --no-lint) drops the lint stage and runs evals only. The
+# eval-runner container sets RUN_LINT=0 because it carries only the eval sources,
+# not the whole package surface skill_lint.py checks (install artifacts, command
+# files); lint stays on the host / CI runner (#79: "lint doesn't touch the
+# container"). Locally, lint runs by default.
+#
 # Ollama lifecycle (the SLM eval stages need it):
 #   - already running    -> use it, leave it running
 #   - installed, stopped -> start it for this run, shut it down afterward
@@ -17,11 +23,18 @@
 #   ./run-tests.sh other-model     # positional model override
 #   ./run-tests.sh -k PATTERN      # only eval cases whose description matches PATTERN
 #   ./run-tests.sh -k persona-persistence other-model   # filter + model together
+#   ./run-tests.sh --core          # PR-gate core subset (judge off), matching skill-ci.yml
 #
 # -k/--filter PATTERN narrows the EN+PL eval stages to matching cases (promptfoo
 # --filter-pattern; a regex over the case description, e.g. `persona-persistence`
 # matches EN+PL, `en-grief$` matches only en-grief). Lint still runs. A language with
 # no matching cases evaluates zero cases and passes. Without -k the full suite runs.
+#
+# --core swaps the full graded configs for the fast core configs
+# (promptfooconfig.core.{en,pl}.yaml — no llm-rubric / similar judge) and, unless
+# an explicit -k is given, narrows to the three core behaviours via the same
+# pattern skill-ci.yml uses ($CORE_FILTER). This reproduces the PR gate
+# (core-slm-smoke) locally; the default (no --core) mirrors the nightly full suite.
 #
 # Prerequisites: Python 3.12, Node (for promptfoo), and Ollama. promptfoo is used
 # from a global install if present, else fetched via `npx` (pinned). The model is
@@ -38,13 +51,22 @@ PYTHON=${PYTHON:-python}
 # recognised flag is taken as the model.
 FILTER=
 MODEL_ARG=
+CORE=0
+RUN_LINT=${RUN_LINT:-1}
+# Core-subset filter — the three behavioural gates the PR runs, kept byte-for-byte
+# in sync with CORE_FILTER in .github/workflows/skill-ci.yml.
+CORE_FILTER='-(dialectical|grief|technical-dismissal)$'
 usage() {
     cat <<'EOF'
-Usage: ./run-tests.sh [-k|--filter PATTERN] [MODEL]
+Usage: ./run-tests.sh [-k|--filter PATTERN] [--core] [MODEL]
 
   -k, --filter PATTERN  Only eval cases whose description matches PATTERN
                         (promptfoo --filter-pattern; e.g. persona-persistence
                         matches EN+PL, en-grief$ matches only en-grief).
+  --core                Run the fast PR-gate core subset (core configs, judge
+                        off), matching skill-ci.yml. Narrows to the three core
+                        behaviours unless an explicit -k is also given.
+  --no-lint             Skip the lint stage; run evals only (or set RUN_LINT=0).
   MODEL                 Model override (default: gemma4:e4b-it-qat; or set MODEL=).
   -h, --help            Show this help.
 
@@ -59,12 +81,21 @@ while [ $# -gt 0 ]; do
             shift 2
             ;;
         -k=*|--filter=*) FILTER=${1#*=}; shift ;;
+        --core) CORE=1; shift ;;
+        --no-lint) RUN_LINT=0; shift ;;
         -h|--help) usage; exit 0 ;;
         --) shift; [ $# -gt 0 ] && MODEL_ARG=$1; break ;;
         -*) printf 'Unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
         *) MODEL_ARG=$1; shift ;;
     esac
 done
+
+# --core: reproduce the PR gate (core-slm-smoke). Swap to the core configs and,
+# unless the caller narrowed with an explicit -k, apply the same core-behaviour
+# filter skill-ci.yml uses.
+if [ "$CORE" -eq 1 ] && [ -z "$FILTER" ]; then
+    FILTER=$CORE_FILTER
+fi
 
 MODEL=${MODEL_ARG:-${MODEL:-gemma4:e4b-it-qat}}
 # Eval-stage filter args (empty unless -k was given). Passed through to promptfoo's
@@ -79,8 +110,13 @@ OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-$OLLAMA_HOST}
 export OLLAMA_BASE_URL
 EVAL_MODEL=$MODEL
 export EVAL_MODEL
-CONFIG_EN=promptfoo/promptfooconfig.en.yaml
-CONFIG_PL=promptfoo/promptfooconfig.pl.yaml
+if [ "$CORE" -eq 1 ]; then
+    CONFIG_EN=promptfoo/promptfooconfig.core.en.yaml
+    CONFIG_PL=promptfoo/promptfooconfig.core.pl.yaml
+else
+    CONFIG_EN=promptfoo/promptfooconfig.en.yaml
+    CONFIG_PL=promptfoo/promptfooconfig.pl.yaml
+fi
 
 # Resolve promptfoo: prefer a global binary (fast), else a pinned npx (zero-install,
 # reproducible). CI installs the same pinned version, so a local pass predicts CI.
@@ -168,7 +204,11 @@ fail() {
     overall=1
 }
 
-run "lint"  "$PYTHON" tools/skill_lint.py
+if [ "$RUN_LINT" -eq 1 ]; then
+    run "lint"  "$PYTHON" tools/skill_lint.py
+else
+    printf '\n=== lint ===\nSkipped (RUN_LINT=0): evals-only run.\n'
+fi
 
 if ensure_ollama && ensure_model; then
     printf 'Using promptfoo: %s\n' "$PROMPTFOO"
