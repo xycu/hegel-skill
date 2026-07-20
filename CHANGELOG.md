@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/xycu/hegel-skill/compare/v1.12.0...v1.13.0) (2026-07-20)
+
+
+### Features
+
+* **evals:** local containerised eval runner (Phase 2) ([#182](https://github.com/xycu/hegel-skill/issues/182)) ([7516c81](https://github.com/xycu/hegel-skill/commit/7516c818a4996597a28feb022af0f2f1bfcd1a06))
+
 ## [1.12.0](https://github.com/xycu/hegel-skill/compare/v1.11.2...v1.12.0) (2026-07-19)
 
 
